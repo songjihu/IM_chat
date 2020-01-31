@@ -5,10 +5,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Looper;
-import android.support.annotation.NonNull;
-import android.support.design.widget.Snackbar;
 import android.app.LoaderManager.LoaderCallbacks;
 
 import android.content.CursorLoader;
@@ -24,7 +21,6 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
@@ -34,7 +30,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.im_chat.other.JID;
-import com.example.im_chat.utils.MyXMPPTCPConnection;
 
 import org.jivesoftware.smack.ConnectionListener;
 import org.jivesoftware.smack.XMPPConnection;
@@ -50,34 +45,17 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static android.Manifest.permission.READ_CONTACTS;
 import static android.os.Build.TIME;
 
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.concurrent.CountDownLatch;
-
-import com.example.im_chat.entity.UserInfo;
-
-import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
-import android.text.TextUtils;
-import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.TextView;
+
 import com.example.im_chat.R;
-import com.example.im_chat.utils.MyXMPPTCPConnection_u;
+import com.example.im_chat.utils.MyXMPPTCPConnectionOnLine;
 
 
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -112,15 +90,15 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> ,
     public static int getRequestReadContacts() {
         return REQUEST_READ_CONTACTS;
     }
-    private MyXMPPTCPConnection_u connection;//聊天服务连接
+    private MyXMPPTCPConnectionOnLine connection;//聊天服务连接
     private Roster roster;
     private Boolean isLogin = false;
     private String name;
     private String id;
     private PrintWriter printWriter = null;
 
-    private void initXMPPTCPConnection(String email,String password){
-        connection = MyXMPPTCPConnection_u.getInstance(email,password);
+    private void initXMPPTCPConnection(){
+        connection = MyXMPPTCPConnectionOnLine.getInstance();
         connection.addConnectionListener(this);
         roster = Roster.getInstanceFor(connection);
         roster.addRosterListener(this);
@@ -235,9 +213,6 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> ,
             loginList.add(email);
             loginList.add(password);
             new loginTask().execute(loginList);
-            //showProgress(true);
-            //mAuthTask = new UserLoginTask(email, password);
-            //mAuthTask.execute((Void) null);
             //用Bundle携带数据
             //新建一个显式意图，第一个参数为当前Activity类对象，第二个参数为你要打开的Activity类
             /*Intent intent =new Intent(LoginActivity.this,LoginActivity.class);
@@ -257,7 +232,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> ,
         //此次连接登录服务器为离线状态
         @Override
         protected Short doInBackground(List<String>... params) {
-            initXMPPTCPConnection(params[0].get(0), params[0].get(1));
+            initXMPPTCPConnection();
             if(connection != null){
                 try{
                     //如果没有连接openfire服务器，则连接；若已连接openfire服务器则跳过。

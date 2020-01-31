@@ -24,6 +24,7 @@ import com.example.im_chat.other.RandomNumber;
 import com.example.im_chat.other.SendEmail;
 import com.example.im_chat.R;
 import com.example.im_chat.utils.MyXMPPTCPConnection;
+import com.example.im_chat.utils.MyXMPPTCPConnectionOnLine;
 
 import org.jivesoftware.smack.ConnectionListener;
 import org.jivesoftware.smack.XMPPConnection;
@@ -36,10 +37,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -60,6 +57,7 @@ public class EmailtestActivity extends AppCompatActivity implements LoaderManage
     private Button mEmailSignUpButton;
     private Button mEmailSignInButton;
     private MyXMPPTCPConnection connection;//聊天服务连接
+    private MyXMPPTCPConnectionOnLine connection2;//聊天服务连接
     private Boolean isLogin = false;
     private Roster roster;
     private Calendar calendar = Calendar.getInstance();//获取时间，更替背景图片
@@ -67,11 +65,18 @@ public class EmailtestActivity extends AppCompatActivity implements LoaderManage
     private ImageView imageView;
     private TextView textView;
 
-
+    //注册时创建的连接
     private void initXMPPTCPConnection(){
         connection = MyXMPPTCPConnection.getInstance();
         connection.addConnectionListener(this);
         roster = Roster.getInstanceFor(connection);
+        roster.addRosterListener(this);
+    }
+    //登录时创建的连接
+    private void initXMPPTCPConnection2(){
+        connection2 = MyXMPPTCPConnectionOnLine.getInstance();
+        connection2.addConnectionListener(this);
+        roster = Roster.getInstanceFor(connection2);
         roster.addRosterListener(this);
     }
 
@@ -272,74 +277,49 @@ public class EmailtestActivity extends AppCompatActivity implements LoaderManage
         }
     }
 
-    private class loginTask extends AsyncTask<List<String>, Object, Short>{
+    private class loginTask extends AsyncTask<List<String>, Object, Short> {
 
         //此次连接登录服务器为离线状态
         @Override
         protected Short doInBackground(List<String>... params) {
-            if(connection != null){
-                try{
+            initXMPPTCPConnection2();
+            if (connection2 != null) {
+                try {
                     //如果没有连接openfire服务器，则连接；若已连接openfire服务器则跳过。
-                    if(!connection.isConnected()){
-                        connection.connect();
-                    }
-                    if(TextUtils.isEmpty(params[0].get(0))){
+                    connection2.disconnect();
+                    connection2.connect();//先退出再登录，防止重复登录
+                    if (TextUtils.isEmpty(params[0].get(0))) {
                         return 0;
-                    }else if(TextUtils.isEmpty(params[0].get(1))){
+                    } else if (TextUtils.isEmpty(params[0].get(1))) {
                         return 1;
-                    }else{
-                        if(isLogin){
-                            connection.login(params[0].get(0), params[0].get(1));
+                    } else {
+                        if (isLogin) {
+                            connection2.login(params[0].get(0), params[0].get(1));
                             return 2;
-                        }else{
-                            if(connection.isConnected()){
-                                connection.login(params[0].get(0), params[0].get(1));
-                                Log.i("++++++++"+params[0].get(0), params[0].get(1));
+                        } else {
+                            if (connection2.isConnected()) {
+                                connection2.login(params[0].get(0), params[0].get(1));
+                                Log.i("++++++++" + params[0].get(0), params[0].get(1));
                                 return 2;
                             }
                         }
                     }
-                }catch (Exception e){
+                } catch (Exception e) {
                     e.printStackTrace();
-                    if(getException(e).contains("Client is already logged in")){
+                    if (getException(e).contains("Client is already logged in")) {
                         Looper.prepare();
-                        Toast.makeText(getApplicationContext(), "请勿重复登录", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getApplicationContext(), "已登录", Toast.LENGTH_SHORT).show();
                         Looper.loop();
+
                         return 2;
                     }
                     return 3;
                 }
             }
-            Log.i("+++++++++++++"+params[0].get(0), params[0].get(1));
+            Log.i("+++++++++++++" + params[0].get(0), params[0].get(1));
             return 3;
         }
-
-        @Override
-        protected void onPostExecute(Short state) {
-            switch (state){
-                case 0:
-                    Toast.makeText(getApplicationContext(), "请输入用户名", Toast.LENGTH_SHORT).show();
-                    break;
-                case 1:
-                    Toast.makeText(getApplicationContext(), "请输入密码", Toast.LENGTH_SHORT).show();
-                    break;
-                case 2:
-                    isLogin = false;
-                    //activity跳转到下一层
-                    Toast.makeText(getApplicationContext(), "登录成功", Toast.LENGTH_SHORT).show();
-                    //startActivity(new Intent(LoginActivity.this, FriendsActivity.class));
-                    break;
-                case 3:
-                    isLogin = false;
-                    Toast.makeText(getApplicationContext(), "登录错误", Toast.LENGTH_SHORT).show();
-                    break;
-                default:
-                    break;
-            }
-
-        }
     }
-
     //计时器
     class MyCount extends CountDownTimer {
         public MyCount(long millisInFuture, long countDownInterval) {
@@ -357,6 +337,7 @@ public class EmailtestActivity extends AppCompatActivity implements LoaderManage
         }
     }
 
+    //双击返回键退出应用
     private long exitTime = 0;
     //重写onKeyDown方法
     public boolean onKeyDown(int keyCode, KeyEvent event) {
