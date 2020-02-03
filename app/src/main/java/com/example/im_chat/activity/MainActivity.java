@@ -4,6 +4,8 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
+import android.view.KeyEvent;
+import android.widget.Toast;
 
 import com.example.im_chat.R;
 import com.example.im_chat.base.BaseMainFragment;
@@ -12,28 +14,29 @@ import com.example.im_chat.ui.fragment.first.FirstFragment;
 import com.example.im_chat.ui.fragment.first.FirstHomeFragmentChat;
 import com.example.im_chat.ui.view.BottomBar;
 import com.example.im_chat.ui.view.BottomBarTab;
-
+import com.example.im_chat.utils.MyXMPPTCPConnectionOnLine;
 
 import org.greenrobot.eventbus.EventBus;
-
 import java.util.ArrayList;
 import java.util.List;
-
 import me.yokeyword.eventbusactivityscope.EventBusActivityScope;
 import me.yokeyword.fragmentation.SupportActivity;
 import me.yokeyword.fragmentation.SupportFragment;
 
+import static android.os.Build.TIME;
+
 /**
- * 类知乎 复杂嵌套Demo tip: 多使用右上角的"查看栈视图"
- * Created by YoKeyword on 16/6/2.
+ * 主界面activity
+ * @auther songjihu
+ * @since 2020/2/1 9:46
  */
 public class MainActivity extends SupportActivity implements BaseMainFragment.OnBackToFirstListener {
     public static final int FIRST = 0;
     public static final int SECOND = 1;
     public static final int THIRD = 2;
     public static final int FOURTH = 3;
-    private String name;
-    private String id;
+    private String user_name;
+    private String user_id;
     List<String> mDatas = new ArrayList<>();
 
     private SupportFragment[] mFragments = new SupportFragment[4];
@@ -54,14 +57,14 @@ public class MainActivity extends SupportActivity implements BaseMainFragment.On
         setContentView(R.layout.activity_main);
 
         Bundle bundle = this.getIntent().getExtras();
-        //从登陆activity获取用户名
-        name = bundle.getString("name");
-        id = bundle.getString("id");
-        Log.i("获取到的name值为",name);
+        //从登陆activity的bundle中获取用户名
+        user_name = bundle.getString("name");
+        user_id = bundle.getString("id");
+        Log.i("获取到的id值为",user_id);
+        Log.i("获取到的name值为",user_name);
 
-        EventBus.getDefault().postSticky(id);
+        //EventBus.getDefault().postSticky(id);
 
-        //EventBus.getDefault().post(new MessageEvent("Hello everyone!"));
 
         SupportFragment firstFragment = findFragment(FirstFragment.class);
 
@@ -159,4 +162,32 @@ public class MainActivity extends SupportActivity implements BaseMainFragment.On
 //            mBottomBar.show();
 //        }
 //    }
+
+    //双击返回键退出应用
+    private long exitTime = 0;
+    //重写onKeyDown方法
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        //判断是否按的后退键，而且按了一次
+        if(keyCode==KeyEvent.KEYCODE_BACK&&event.getRepeatCount()==0)
+        {
+            //获取当前的系统时间，和exitTime相减，判断两次间隔是否大于规定时间
+            //exitTime没有初始值则默认为0
+            //如果大于设定的时间，则弹出提示，同时把exitTime设置为当前时间
+            if(System.currentTimeMillis()-exitTime>TIME)
+            {
+                Toast.makeText(this,"再按一次退出程序",Toast.LENGTH_LONG).show();
+                exitTime= System.currentTimeMillis();
+            }
+            else
+            {
+                //如果再次按后退的时间小于规定时间，则退出,且退出登录
+                MyXMPPTCPConnectionOnLine.getInstance().disconnect();
+                finish();
+            }
+            //消费事件
+            return true;
+        }
+        //不处理事件
+        return false;
+    }
 }

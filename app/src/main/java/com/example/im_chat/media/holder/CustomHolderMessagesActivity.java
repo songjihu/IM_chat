@@ -10,9 +10,9 @@ import android.widget.Toast;
 
 
 import com.example.im_chat.R;
-import com.example.im_chat.adapter.ChatMessage;
 import com.example.im_chat.db.DaoMaster;
 import com.example.im_chat.db.DaoSession;
+import com.example.im_chat.entity.ChatMessage;
 import com.example.im_chat.helper.MessageTranslateBack;
 import com.example.im_chat.helper.MessageTranslateTo;
 import com.example.im_chat.media.DemoMessagesActivity;

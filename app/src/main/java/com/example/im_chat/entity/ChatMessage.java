@@ -1,4 +1,4 @@
-package com.example.im_chat.adapter;
+package com.example.im_chat.entity;
 
 import org.greenrobot.greendao.annotation.Entity;
 import org.greenrobot.greendao.annotation.Generated;
@@ -6,10 +6,9 @@ import org.greenrobot.greendao.annotation.Id;
 import org.greenrobot.greendao.annotation.NotNull;
 
 /**
- * 修改于 2019/5/7
- * sjh
- * 消息本地数据库
- * 存储 自增id和msg
+ *   聊天msg存入本地数据库
+ * @auther songjihu
+ * @since 2020/2/2 13:38
  */
 
 @Entity

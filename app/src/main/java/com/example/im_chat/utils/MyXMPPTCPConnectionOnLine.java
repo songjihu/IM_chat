@@ -21,9 +21,9 @@ public class MyXMPPTCPConnectionOnLine extends XMPPTCPConnection {
             builder.setSecurityMode(ConnectionConfiguration.SecurityMode.disabled);
             builder.setResource("Android");
             //设置服务器名称
-            builder.setServiceName("192.168.4.1");
+            builder.setServiceName("123.56.163.211");
             //设置主机地址
-            builder.setHost("192.168.4.1");
+            builder.setHost("123.56.163.211");
             //设置端口号
             builder.setPort(5222);
             //是否查看debug日志

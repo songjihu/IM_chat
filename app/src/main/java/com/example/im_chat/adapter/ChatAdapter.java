@@ -8,6 +8,7 @@ import android.widget.BaseAdapter;
 import android.widget.TextView;
 
 import com.example.im_chat.R;
+import com.example.im_chat.entity.ChatMessage;
 
 
 import java.util.List;

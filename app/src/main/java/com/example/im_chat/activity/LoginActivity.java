@@ -29,6 +29,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.im_chat.entity.UserInfo;
 import com.example.im_chat.other.JID;
 
 import org.jivesoftware.smack.ConnectionListener;
@@ -41,6 +42,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -52,6 +57,7 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 
 import com.example.im_chat.R;
+import com.example.im_chat.utils.JDBCUtils;
 import com.example.im_chat.utils.MyXMPPTCPConnectionOnLine;
 
 
@@ -96,6 +102,8 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> ,
     private String name;
     private String id;
     private PrintWriter printWriter = null;
+    final UserInfo uuu = new UserInfo();
+
 
     private void initXMPPTCPConnection(){
         connection = MyXMPPTCPConnectionOnLine.getInstance();
@@ -104,12 +112,14 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> ,
         roster.addRosterListener(this);
     }
 
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);//设置为全屏显示，没有日期栏
         setContentView(R.layout.activity_login);
         imageView = findViewById(R.id.imageView);
         textView = findViewById(R.id.textView);
@@ -144,6 +154,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> ,
             }
         });
 
+        initXMPPTCPConnection();
         //按照时间切换背景
         if (hour>=5&&hour<=12) {
             imageView.setImageResource(R.drawable.good_morning_img);
@@ -213,26 +224,71 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> ,
             loginList.add(email);
             loginList.add(password);
             new loginTask().execute(loginList);
-            //用Bundle携带数据
-            //新建一个显式意图，第一个参数为当前Activity类对象，第二个参数为你要打开的Activity类
-            /*Intent intent =new Intent(LoginActivity.this,LoginActivity.class);
-            //用Bundle携带数据
-            Bundle bundle=new Bundle();
-            //传递name参数为name到下一层
-            bundle.putString("name",name);
-            bundle.putString("id",id);
-            intent.putExtras(bundle);
-            startActivity(intent);
-            */
+            new getnameTask().execute(loginList);
+        }
+    }
+
+    /**
+     *
+     * @auther songjihu
+     * @since 2020/2/1 10:18
+     * @return 用户名
+     */
+    private class getnameTask extends AsyncTask<List<String>, Object, Short>{
+
+        @Override
+        protected Short doInBackground(List<String>... params) {
+            uuu.setUserId(params[0].get(0));
+            try {
+                Connection cn= JDBCUtils.getConnection();
+                String sql="SELECT * FROM `user` WHERE jid = '"+JID.unescapeNode(uuu.getUserId())+"'";
+                Statement st=(Statement)cn.createStatement();
+                ResultSet rs=st.executeQuery(sql);
+                while(rs.next()){
+                    uuu.setUserName(rs.getString("user_name"));
+                }
+                JDBCUtils.close(rs,st,cn);
+                return 1;
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            return 0;
+        }
+
+        @Override
+        protected void onPostExecute(Short state) {
+            switch (state){
+                case 0:
+                    Toast.makeText(getApplicationContext(), "获取失败", Toast.LENGTH_SHORT).show();
+                    break;
+                case 1:
+                    Toast.makeText(getApplicationContext(), "获取成功", Toast.LENGTH_SHORT).show();
+                    //用Bundle携带数据
+                    //新建一个显式意图，第一个参数为当前Activity类对象，第二个参数为你要打开的Activity类
+                    Intent intent =new Intent(LoginActivity.this,MainActivity.class);
+                    //用Bundle携带数据
+                    Bundle bundle=new Bundle();
+                    //传递name参数为name到下一层
+                    //bundle.putString("id",uuu.getUserId());
+                    //bundle.putString("name",uuu.getUserName());
+                    bundle.putString("id",uuu.getUserId());
+                    bundle.putString("name",uuu.getUserName());
+                    //Log.i("4523543254获取到的name值为",uuu.getUserName());
+                    intent.putExtras(bundle);
+                    startActivity(intent);
+                    finish();
+                    break;
+                default:
+                    break;
+            }
         }
     }
 
     private class loginTask extends AsyncTask<List<String>, Object, Short>{
 
-        //此次连接登录服务器为离线状态
+        //此次连接登录服务器为在线
         @Override
         protected Short doInBackground(List<String>... params) {
-            initXMPPTCPConnection();
             if(connection != null){
                 try{
                     //如果没有连接openfire服务器，则连接；若已连接openfire服务器则跳过。
@@ -295,9 +351,11 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> ,
     }
 
     /**
-     * 将异常日志转换为字符串
-     * @param e
-     * @return
+     *
+     * @auther songjihu
+     * @since 2020/2/1 10:08
+     * @param e :
+     * @return 异常内容字符串形式
      */
     public static String getException(Exception e) {
         Writer writer = null;
@@ -317,8 +375,9 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> ,
         }
     }
 
+    //启用注册Activity
     private void attemptSignUp() {
-        //启用注册Activity
+        finish();
         Intent intent =new Intent(LoginActivity.this,EmailtestActivity.class);
         startActivity(intent);
         overridePendingTransition(R.anim.in_from_left, R.anim.out_to_right);
@@ -395,7 +454,6 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> ,
             emails.add(cursor.getString(ProfileQuery.ADDRESS));
             cursor.moveToNext();
         }
-
         addEmailsToAutoComplete(emails);
     }
 

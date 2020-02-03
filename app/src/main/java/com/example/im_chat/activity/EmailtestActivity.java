@@ -1,17 +1,20 @@
 package com.example.im_chat.activity;
 
+import android.app.Activity;
 import android.app.LoaderManager;
+import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Looper;
-import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -23,6 +26,7 @@ import com.example.im_chat.other.JID;
 import com.example.im_chat.other.RandomNumber;
 import com.example.im_chat.other.SendEmail;
 import com.example.im_chat.R;
+import com.example.im_chat.utils.JDBCUtils;
 import com.example.im_chat.utils.MyXMPPTCPConnection;
 import com.example.im_chat.utils.MyXMPPTCPConnectionOnLine;
 
@@ -37,6 +41,11 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -46,9 +55,9 @@ import java.util.concurrent.CountDownLatch;
 import static android.os.Build.TIME;
 
 
-public class EmailtestActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>, ConnectionListener, RosterListener {
+public class EmailtestActivity extends Activity implements LoaderManager.LoaderCallbacks<Cursor>, ConnectionListener, RosterListener {
 
-    private EditText etInputEmail,etInputGetNum,etInputPassword,etInputPassword1;
+    private EditText etInputEmail,etInputGetNum,etInputPassword,etInputPassword1,etInputName;
 
     private long verificationCode=0;            //生成的验证码
     private String email;    //邮箱
@@ -64,6 +73,7 @@ public class EmailtestActivity extends AppCompatActivity implements LoaderManage
     private int hour = calendar.get(Calendar.HOUR_OF_DAY);
     private ImageView imageView;
     private TextView textView;
+    final UserInfo uuu = new UserInfo();
 
     //注册时创建的连接
     private void initXMPPTCPConnection(){
@@ -80,15 +90,20 @@ public class EmailtestActivity extends AppCompatActivity implements LoaderManage
         roster.addRosterListener(this);
     }
 
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_sign_up2);
         imageView = findViewById(R.id.imageView2);
         textView = findViewById(R.id.textView2);
 
         init();
         initXMPPTCPConnection();
+
 
         //按照时间切换背景
         if (hour>=5&&hour<=12) {
@@ -107,6 +122,7 @@ public class EmailtestActivity extends AppCompatActivity implements LoaderManage
 
     private void init() {
         etInputEmail= (EditText) findViewById(R.id.etInputEmail);
+        etInputName= (EditText) findViewById(R.id.etInputName);
         etInputGetNum= (EditText) findViewById(R.id.etInputGetNum);
         etInputPassword=(EditText) findViewById(R.id.etInputPassword);
         etInputPassword1=(EditText) findViewById(R.id.etInputPassword1);
@@ -167,15 +183,16 @@ public class EmailtestActivity extends AppCompatActivity implements LoaderManage
     //判断输入的验证码是否正确
     private void judgeVerificationCode() {
         String email = etInputEmail.getText().toString();
+        String name = etInputName.getText().toString();
         String password = etInputPassword.getText().toString();
         String password1 = etInputPassword1.getText().toString();
         String testcode = etInputGetNum.getText().toString();
         //attemptSignUp(email,password);//执行注册(测试)
 
         //创建用户类
-        final UserInfo uuu = new UserInfo();
         uuu.setUserId(email);
         uuu.setUserPwd(password);
+        uuu.setUserName(name);
 
         //判断是否满足注册条件
         if(!testcode.isEmpty()&&!password.isEmpty()&&!password1.isEmpty()&&!email.isEmpty()){
@@ -206,8 +223,59 @@ public class EmailtestActivity extends AppCompatActivity implements LoaderManage
         loginList.add(password);
         new SignUpTask().execute(loginList);
         new loginTask().execute(loginList);
+        Intent intent =new Intent(EmailtestActivity.this,MainActivity.class);
+        //用Bundle携带数据
+        Bundle bundle=new Bundle();
+        //传递name参数为name到下一层
+        bundle.putString("id",uuu.getUserId());
+        bundle.putString("name",uuu.getUserName());
+        intent.putExtras(bundle);
+        startActivity(intent);
+        finish();
     }
 
+    /**
+     *
+     * @auther songjihu
+     * @since 2020/2/1 10:18
+     * @return 用户名
+     */
+    private class getnameTask extends AsyncTask<List<String>, Object, Short>{
+
+
+        @Override
+        protected Short doInBackground(List<String>... params) {
+            uuu.setUserId(params[0].get(0));
+            try {
+                Connection cn= JDBCUtils.getConnection();
+                String sql="SELECT * FROM `user` WHERE jid = "+uuu.getUserId();
+                Statement st=(Statement)cn.createStatement();
+                ResultSet rs=st.executeQuery(sql);
+                while(rs.next()){
+                    uuu.setUserName(rs.getString("username"));
+                }
+                JDBCUtils.close(rs,st,cn);
+                return 1;
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            return 0;
+        }
+
+        @Override
+        protected void onPostExecute(Short state) {
+            switch (state){
+                case 0:
+                    Toast.makeText(getApplicationContext(), "获取失败", Toast.LENGTH_SHORT).show();
+                    break;
+                case 1:
+                    Toast.makeText(getApplicationContext(), "获取成功", Toast.LENGTH_SHORT).show();
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
 
     //注册任务函数
     private class SignUpTask extends AsyncTask<List<String>, Object, Short> {
@@ -225,6 +293,17 @@ public class EmailtestActivity extends AppCompatActivity implements LoaderManage
                     AccountManager accountManager = AccountManager.getInstance(connection);//获取账户管理对象
                     accountManager.sensitiveOperationOverInsecureConnection(true);
                     accountManager.createAccount(params[0].get(0),params[0].get(1));//创建账号即注册
+                    Connection cn= JDBCUtils.getConnection();
+                    String sql = "insert into user (jid,user_name) values (?,?);";
+                    PreparedStatement pstm = cn.prepareStatement(sql);
+                    //通过setString给4个问好赋值，下面的course_id，user_id，course_time，us_job_id都是已有值的变量，不要误会了
+                    pstm.setString(1, uuu.getUserId());
+                    pstm.setString(2, uuu.getUserName());
+                    //执行更新数据库
+                    pstm.executeUpdate();
+                    //关闭访问
+                    pstm.close();
+                    cn.close();
                     //Log.i("_=_+_+_+_+_+_+"+params[0].get(0), params[0].get(1));
                     return 1;//注册成功
                 }catch (Exception e){

@@ -12,6 +12,13 @@ android {
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
+    greendao {
+        schemaVersion 1 //数据库版本号
+        daoPackage 'com.example.im_chat.db'// 设置DaoMaster、DaoSession、Dao 包名
+        targetGenDir 'src/main/java'//设置DaoMaster、DaoSession、Dao目录
+        generateTests false //设置为true以自动生成单元测试。
+        targetGenDirTests 'src/main/java' //应存储生成的单元测试的基本目录。默认为 src / androidTest / java。
+    }
     buildTypes {
         release {
             minifyEnabled false
@@ -25,7 +32,7 @@ android {
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
@@ -56,7 +63,6 @@ dependencies {
     //Utils
     implementation 'me.relex:circleindicator:2.1.0'
     implementation 'com.github.stfalcon:chatkit:0.3.3'
-    implementation fileTree(dir: 'libs', include: ['*.aar', '*.jar'], exclude: [])
-
-
+    implementation fileTree(include: ['*.aar', '*.jar'], exclude: [], dir: 'libs')
+    implementation files('libs/kxml2-2.3.0.jar')
 }

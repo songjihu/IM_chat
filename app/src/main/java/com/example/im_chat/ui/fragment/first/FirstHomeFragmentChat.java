@@ -15,10 +15,9 @@ import android.view.ViewGroup;
 
 
 import com.example.im_chat.R;
-import com.example.im_chat.adapter.ChatMessage;
 import com.example.im_chat.adapter.FirstHomeAdapter;
-import com.example.im_chat.db.DaoMaster;
 import com.example.im_chat.db.DaoSession;
+import com.example.im_chat.entity.ChatMessage;
 import com.example.im_chat.entity.Friend;
 import com.example.im_chat.helper.MessageTranslateBack;
 import com.example.im_chat.media.data.fixtures.DialogsFixtures;
@@ -28,6 +27,7 @@ import com.example.im_chat.media.data.model.User;
 import com.example.im_chat.media.holder.CustomHolderDialogsActivity;
 import com.example.im_chat.media.holder.CustomHolderMessagesActivity;
 import com.example.im_chat.media.holder.holders.dialogs.CustomDialogViewHolder;
+import com.example.im_chat.utils.JDBCUtils;
 import com.example.im_chat.utils.MyXMPPTCPConnection;
 import com.example.im_chat.utils.MyXMPPTCPConnectionOnLine;
 import com.stfalcon.chatkit.commons.ImageLoader;
@@ -47,8 +47,8 @@ import org.jivesoftware.smack.roster.RosterEntry;
 import org.jivesoftware.smackx.offline.OfflineMessageManager;
 
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -178,11 +178,11 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
     private static DaoSession daoSession;//配置数据库
 
     //初始化数据库
-    private void initGreenDao() {
+    private void initGreenDao() {/*
         DaoMaster.DevOpenHelper helper = new DaoMaster.DevOpenHelper(getActivity(), "aserbao.db");
         SQLiteDatabase db = helper.getWritableDatabase();
         DaoMaster daoMaster = new DaoMaster(db);
-        daoSession = daoMaster.newSession();
+        daoSession = daoMaster.newSession();*/
     }
 
     //接受处理消息
@@ -224,17 +224,18 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
 
         //uTitles="20162430722";
         //读取加入的群组名称和个数
+
         new Thread(new Runnable() {
             @Override
             public void run() {
             try{
+
                 int team_number;//一共有几个讨论组
                 int i,j;
-                Class.forName("com.mysql.jdbc.Driver");
-                java.sql.Connection cn= DriverManager.getConnection("jdbc:mysql://182.254.161.189/gcsj","root","mypwd");
+                Connection cn= JDBCUtils.getConnection();
                 Statement st=(Statement)cn.createStatement();
 
-
+/*
                 //读取team的id
                 String sql="SELECT * FROM `user_team` WHERE user_id = "+uTitles;
                 ResultSet rs=st.executeQuery(sql);
@@ -317,9 +318,7 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
                 //关闭
                 cn.close();
                 st.close();
-                rs.close();
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
+               //rs.close();
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -339,7 +338,7 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
         //先处理离线消息
         OfflineMessageManager offlineMessageManager=new OfflineMessageManager(connection);
         List<org.jivesoftware.smack.packet.Message> messages= null;
-
+/*
         try {
             messages =  offlineMessageManager.getMessages();
             for(int i=0;i<messages.size();i++)
@@ -357,7 +356,7 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
             e.printStackTrace();
         }
 
-
+*/
         //结束离线状态，进入在线状态
         new Thread(new Runnable() {
             @Override
@@ -373,7 +372,7 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
                     {
                         connection_online.connect();
                     }
-                    connection_online.login(uTitles,uTitles);
+                    //connection_online.login(uTitles,uTitles);
                 } catch (XMPPException e) {
                     e.printStackTrace();
                 } catch (SmackException e) {
