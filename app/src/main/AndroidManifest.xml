@@ -40,5 +40,6 @@
             android:windowSoftInputMode="stateHidden|adjustPan"
             android:configChanges="orientation|screenSize">
         </activity>
+        <activity android:name=".activity.AddFriendActivity"></activity>
     </application>
 </manifest>

@@ -12,6 +12,7 @@ import com.example.im_chat.base.BaseMainFragment;
 import com.example.im_chat.other.TabSelectedEvent;
 import com.example.im_chat.ui.fragment.first.FirstFragment;
 import com.example.im_chat.ui.fragment.first.FirstHomeFragmentChat;
+import com.example.im_chat.ui.fragment.second.SecondFragment;
 import com.example.im_chat.ui.view.BottomBar;
 import com.example.im_chat.ui.view.BottomBarTab;
 import com.example.im_chat.utils.MyXMPPTCPConnectionOnLine;
@@ -70,7 +71,7 @@ public class MainActivity extends SupportActivity implements BaseMainFragment.On
 
         if (firstFragment == null) {
             mFragments[FIRST] = FirstFragment.newInstance();
-            mFragments[SECOND] = FirstFragment.newInstance();
+            mFragments[SECOND] = SecondFragment.newInstance();
             mFragments[THIRD] = FirstFragment.newInstance();
 
             loadMultipleRootFragment(R.id.fl_container, FIRST,

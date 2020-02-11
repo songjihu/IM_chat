@@ -1,2 +1,2 @@
-include ':app'
+include ':app', ':sidebar'
 rootProject.name='IM_chat'

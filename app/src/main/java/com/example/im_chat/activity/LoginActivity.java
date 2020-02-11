@@ -43,6 +43,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -103,6 +104,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> ,
     private String id;
     private PrintWriter printWriter = null;
     final UserInfo uuu = new UserInfo();
+    private List<String> loginList = new ArrayList<String>();
 
 
     private void initXMPPTCPConnection(){
@@ -217,19 +219,19 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> ,
             // perform the user login attempt.
 
             //连接聊天服务器
-            List<String> loginList = new ArrayList<String>();
+
             //loginList.add(et_account.getText().toString());
             //loginList.add(et_password.getText().toString());
             email= JID.escapeNode(email);
             loginList.add(email);
             loginList.add(password);
             new loginTask().execute(loginList);
-            new getnameTask().execute(loginList);
+
         }
     }
 
     /**
-     *
+     * 获取用户昵称
      * @auther songjihu
      * @since 2020/2/1 10:18
      * @return 用户名
@@ -241,6 +243,8 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> ,
             uuu.setUserId(params[0].get(0));
             try {
                 Connection cn= JDBCUtils.getConnection();
+                //Class.forName("com.mysql.jdbc.Driver");
+                //java.sql.Connection cn= DriverManager.getConnection("jdbc:mysql://123.56.163.211/im_chat?useUnicode=true&characterEncoding=UTF-8","sjh","8859844007");
                 String sql="SELECT * FROM `user` WHERE jid = '"+JID.unescapeNode(uuu.getUserId())+"'";
                 Statement st=(Statement)cn.createStatement();
                 ResultSet rs=st.executeQuery(sql);
@@ -248,6 +252,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> ,
                     uuu.setUserName(rs.getString("user_name"));
                 }
                 JDBCUtils.close(rs,st,cn);
+                //rs.close();cn.close();st.close();
                 return 1;
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -338,6 +343,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> ,
                     isLogin = false;
                     //activity跳转到下一层
                     Toast.makeText(getApplicationContext(), "登录成功", Toast.LENGTH_SHORT).show();
+                    new getnameTask().execute(loginList);
                     //startActivity(new Intent(LoginActivity.this, FriendsActivity.class));
                     break;
                 case 3:

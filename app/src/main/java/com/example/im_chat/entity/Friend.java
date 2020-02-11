@@ -11,6 +11,15 @@ import android.os.Parcelable;
 public class Friend implements Parcelable{
     private String jid;
     private String name;
+    private String online;
+
+    public String getOnline() {
+        return online;
+    }
+
+    public void setOnline(String online) {
+        this.online = online;
+    }
 
     public Friend() {
     }
@@ -18,6 +27,12 @@ public class Friend implements Parcelable{
     public Friend(String jid, String name) {
         this.jid = jid;
         this.name = name;
+    }
+
+    public Friend(String jid, String name,String online) {
+        this.jid = jid;
+        this.name = name;
+        this.online = online;
     }
 
     protected Friend(Parcel in) {

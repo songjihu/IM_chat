@@ -15,6 +15,16 @@ public class Dialog implements IDialog<Message> {
     private ArrayList<User> users;
     private Message lastMessage;
 
+    public String getIsOnline() {
+        return isOnline;
+    }
+
+    public void setIsOnline(String isOnline) {
+        this.isOnline = isOnline;
+    }
+
+    private String isOnline;
+
     private int unreadCount;
 
     public Dialog(String id, String name, String photo,
@@ -37,6 +47,15 @@ public class Dialog implements IDialog<Message> {
         this.users = users;//群用户list
         this.lastMessage = lastMessage;//群最后一条消息
         this.unreadCount = unreadCount;//未读消息的数量
+    }
+
+    //user列表使用的dialog
+    public Dialog(String id, String name,String isOnline) {
+
+        this.id = id;//用户id
+        this.dialogName = name;//用户名
+        this.isOnline=isOnline;//用户是否在线
+
     }
 
     @Override

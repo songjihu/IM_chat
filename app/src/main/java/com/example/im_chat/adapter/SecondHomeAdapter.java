@@ -17,18 +17,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by YoKeyword on 16/6/5.
- * 修改于 19/4/23.
- * 修改聊天信息
+ *   联系人列表适配器
+ * @auther songjihu
+ * @since 2020/2/4 9:40
  */
-public class FirstHomeAdapter extends RecyclerView.Adapter<FirstHomeAdapter.VH> {
+public class SecondHomeAdapter extends RecyclerView.Adapter<SecondHomeAdapter.VH> {
     private List<Friend> mItems = new ArrayList<>();
     private LayoutInflater mInflater;
 
     private OnItemClickListener mClickListener;
 
 
-    public FirstHomeAdapter(Context context) {
+    public SecondHomeAdapter(Context context) {
         mInflater = LayoutInflater.from(context);
     }
 

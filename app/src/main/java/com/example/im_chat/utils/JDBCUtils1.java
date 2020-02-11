@@ -7,7 +7,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 
-public class JDBCUtils {
+public class JDBCUtils1 {
 
     private static final String connectionURL = "jdbc:mysql://123.56.163.211/im_chat?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true";//避免连接池失效
     private static final String username = "sjh";
@@ -17,7 +17,7 @@ public class JDBCUtils {
 
     //静态代码块：当整个程序执行的时候，优先加载静态代码块
     static {
-        for(int i =0;i<1;i++) {
+        for(int i =0;i<5;i++) {
             Connection con = createConnection();
             conList.add(con);
         }

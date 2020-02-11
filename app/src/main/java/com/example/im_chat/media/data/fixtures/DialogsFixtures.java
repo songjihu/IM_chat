@@ -9,14 +9,15 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
-/*
- * Created by Anton Bevza on 07.09.16.
+/**
+ *   获取多个item，类型为dialog
+ * @auther songjihu
+ * @since 2020/2/3 16:32
  */
 public final class DialogsFixtures extends FixturesData {
     private DialogsFixtures() {
         throw new AssertionError();
     }
-
     //聊天记录获取
     public static ArrayList<Dialog> getDialogs() {
         ArrayList<Dialog> chats = new ArrayList<>();
@@ -49,6 +50,7 @@ public final class DialogsFixtures extends FixturesData {
         return chats;
     }
 
+
     //同上(返回单个dialog)
     private static Dialog getDialogChat(String team_name[],String team_member[][],int i, Date lastMessageCreatedAt) {
         ArrayList<User> users = getUsers();
@@ -61,6 +63,26 @@ public final class DialogsFixtures extends FixturesData {
                 i < 3 ? 3 - i : 0);//未读的消息数
     }
 
+    //联系人列表获取(返回list)
+    public static ArrayList<Dialog> getDialogsUser(String id[],String name[],int friend_number,String isOnline[]) {
+        ArrayList<Dialog> friends = new ArrayList<>();
+
+        for (int i = 0; i < friend_number; i++) {
+            //Calendar为时间函数
+            //用下个函数返回单个并加入list
+            friends.add(getDialogUser(id[i],name[i],isOnline[i]));
+        }
+        return friends;
+    }
+
+
+    //同上(返回单个dialog)
+    private static Dialog getDialogUser(String id,String name,String flag) {
+        return new Dialog(
+                id,//userid
+                name,//user名
+                flag);//是否在线
+    }
 
     private static Dialog getDialog(int i, Date lastMessageCreatedAt) {
         ArrayList<User> users = getUsers();

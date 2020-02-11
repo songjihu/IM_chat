@@ -15,7 +15,7 @@ import android.view.ViewGroup;
 
 
 import com.example.im_chat.R;
-import com.example.im_chat.adapter.FirstHomeAdapter;
+
 import com.example.im_chat.db.DaoSession;
 import com.example.im_chat.entity.ChatMessage;
 import com.example.im_chat.entity.Friend;
@@ -63,7 +63,7 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
         ChatManagerListener,ChatMessageListener {
     private RecyclerView mRecy;
     private SwipeRefreshLayout mRefreshLayout;
-    private FirstHomeAdapter mAdapter;//此项为展示待上课程item的适配器
+    //private FirstHomeAdapter mAdapter;//此项为展示待上课程item的适配器
     private List<Friend> friendsList;
     private DialogsList dialogsList;//会话列表
     private DialogsListAdapter<Dialog> dialogsAdapter;//会话适配器

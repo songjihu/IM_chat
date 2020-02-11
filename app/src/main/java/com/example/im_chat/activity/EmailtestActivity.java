@@ -294,6 +294,7 @@ public class EmailtestActivity extends Activity implements LoaderManager.LoaderC
                     accountManager.sensitiveOperationOverInsecureConnection(true);
                     accountManager.createAccount(params[0].get(0),params[0].get(1));//创建账号即注册
                     Connection cn= JDBCUtils.getConnection();
+
                     String sql = "insert into user (jid,user_name) values (?,?);";
                     PreparedStatement pstm = cn.prepareStatement(sql);
                     //通过setString给4个问好赋值，下面的course_id，user_id，course_time，us_job_id都是已有值的变量，不要误会了
@@ -301,6 +302,7 @@ public class EmailtestActivity extends Activity implements LoaderManager.LoaderC
                     pstm.setString(2, uuu.getUserName());
                     //执行更新数据库
                     pstm.executeUpdate();
+
                     //关闭访问
                     pstm.close();
                     cn.close();

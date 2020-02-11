@@ -65,4 +65,5 @@ dependencies {
     implementation 'com.github.stfalcon:chatkit:0.3.3'
     implementation fileTree(include: ['*.aar', '*.jar'], exclude: [], dir: 'libs')
     implementation files('libs/kxml2-2.3.0.jar')
+    implementation project(path: ':sidebar')
 }
