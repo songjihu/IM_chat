@@ -9,12 +9,15 @@ import android.widget.Toast;
 
 import com.example.im_chat.R;
 import com.example.im_chat.base.BaseMainFragment;
+import com.example.im_chat.entity.MyInfo;
 import com.example.im_chat.other.TabSelectedEvent;
 import com.example.im_chat.ui.fragment.first.FirstFragment;
 import com.example.im_chat.ui.fragment.first.FirstHomeFragmentChat;
 import com.example.im_chat.ui.fragment.second.SecondFragment;
+import com.example.im_chat.ui.fragment.third.ThirdFragment;
 import com.example.im_chat.ui.view.BottomBar;
 import com.example.im_chat.ui.view.BottomBarTab;
+import com.example.im_chat.utils.MyXMPPTCPConnection;
 import com.example.im_chat.utils.MyXMPPTCPConnectionOnLine;
 
 import org.greenrobot.eventbus.EventBus;
@@ -39,6 +42,7 @@ public class MainActivity extends SupportActivity implements BaseMainFragment.On
     private String user_name;
     private String user_id;
     List<String> mDatas = new ArrayList<>();
+    List<String> UserDatas = new ArrayList<>();
 
     private SupportFragment[] mFragments = new SupportFragment[4];
 
@@ -63,8 +67,10 @@ public class MainActivity extends SupportActivity implements BaseMainFragment.On
         user_id = bundle.getString("id");
         Log.i("获取到的id值为",user_id);
         Log.i("获取到的name值为",user_name);
-
-        //EventBus.getDefault().postSticky(id);
+        MyInfo myInfo=new MyInfo();
+        myInfo.setUserId(user_id);
+        myInfo.setUserName(user_name);
+        EventBus.getDefault().postSticky(myInfo);
 
 
         SupportFragment firstFragment = findFragment(FirstFragment.class);
@@ -72,7 +78,7 @@ public class MainActivity extends SupportActivity implements BaseMainFragment.On
         if (firstFragment == null) {
             mFragments[FIRST] = FirstFragment.newInstance();
             mFragments[SECOND] = SecondFragment.newInstance();
-            mFragments[THIRD] = FirstFragment.newInstance();
+            mFragments[THIRD] = ThirdFragment.newInstance();
 
             loadMultipleRootFragment(R.id.fl_container, FIRST,
                     mFragments[FIRST],
@@ -83,8 +89,8 @@ public class MainActivity extends SupportActivity implements BaseMainFragment.On
 
             // 这里我们需要拿到mFragments的引用
             mFragments[FIRST] = firstFragment;
-            mFragments[SECOND] = findFragment(FirstFragment.class);
-            mFragments[THIRD] = findFragment(FirstFragment.class);
+            mFragments[SECOND] = findFragment(SecondFragment.class);
+            mFragments[THIRD] = findFragment(ThirdFragment.class);
         }
 
         initView();

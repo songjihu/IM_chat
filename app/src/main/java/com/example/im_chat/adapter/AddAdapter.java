@@ -1,13 +1,16 @@
 package com.example.im_chat.adapter;
 
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,17 +21,28 @@ import android.widget.Toast;
 import com.example.im_chat.R;
 import com.example.im_chat.activity.AddFriendActivity;
 import com.example.im_chat.entity.Friend;
+import com.example.im_chat.entity.MyInfo;
 import com.example.im_chat.listener.OnItemClickListener;
 import com.example.im_chat.other.JID;
+import com.example.im_chat.utils.JDBCUtils;
 import com.example.im_chat.utils.MyXMPPTCPConnectionOnLine;
 
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 import org.jivesoftware.smack.ConnectionListener;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.roster.Roster;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+
+import me.yokeyword.eventbusactivityscope.EventBusActivityScope;
 
 
 /**
@@ -45,11 +59,15 @@ public class AddAdapter extends RecyclerView.Adapter <AddAdapter.VH> {
     private MyXMPPTCPConnectionOnLine connection;
     private LayoutInflater mInflater;
     private OnItemClickListener mClickListener;
+    private MyInfo myInfo=new MyInfo();
 
 
-    public AddAdapter(Context context){
+    public AddAdapter(Context context,String jid){
         mInflater = LayoutInflater.from(context);
+        this.context=context;
+        myInfo.setUserId(jid);
     }
+
 
 
     //onCreateViewHolder方法创建一个viewHolder，viewholder可以理解为一条数据的展示布局，这里我们自定义类LinearViewHolder创建一个只有TextView的item
@@ -59,7 +77,6 @@ public class AddAdapter extends RecyclerView.Adapter <AddAdapter.VH> {
         //return new LinearViewHolder(LayoutInflater.from(mContext).inflate(R.layout.item_add_friend,parent,false));
         //item的布局形式
         View view = mInflater.inflate(R.layout.item_add_friend, parent, false);
-
         final AddAdapter.VH holder = new AddAdapter.VH(view);
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -67,18 +84,31 @@ public class AddAdapter extends RecyclerView.Adapter <AddAdapter.VH> {
                 Thread thread = new Thread(new Runnable() {
                     @Override
                     public void run() {
+                        Looper.prepare();//增加部分
                         try {
                             initXMPPTCPConnection();
                             Thread.sleep(1000);
-                            String friendName = holder.jid.getText().toString();
-                            friendName= JID.escapeNode(friendName);
-                            boolean result = addFriend(friendName, friendName,"默认分组");
-                            Message msg = new Message();
-                            Bundle b = new Bundle();
-                            b.putBoolean("result", result);
-                            msg.setData(b);
+                            String friendJid = holder.jid.getText().toString();
+                            String friendName = holder.name.getText().toString();
+                            friendJid= JID.escapeNode(friendJid);
+                            addFriend(friendJid, friendName,"默认分组");
+                            Connection cn= JDBCUtils.getConnection();
+                            String sql = "insert into friendlist (jid,fjid,accepted) values (?,?,?);";
+                            PreparedStatement pstm = cn.prepareStatement(sql);
+                            //通过setString给4个问好赋值，下面的course_id，user_id，course_time，us_job_id都是已有值的变量，不要误会了
+                            pstm.setString(1, JID.unescapeNode(myInfo.getUserId()));
+                            pstm.setString(2, JID.unescapeNode(friendJid));
+                            pstm.setString(3, "1");
+                            //执行更新数据库
+                            pstm.executeUpdate();
+                            //关闭访问
+                            pstm.close();cn.close();
+                            Toast.makeText(context,"申请已经发送", Toast.LENGTH_SHORT).show();
+                            Looper.loop();//增加部分
                         } catch (Exception e) {
-                            System.out.println("申请发生异常！！");
+                            Toast.makeText(context,"申请发生异常", Toast.LENGTH_SHORT).show();
+                            Looper.loop();//增加部分
+                            //System.out.println("申请发生异常！！");
                             e.printStackTrace();
                         }
                     }

@@ -8,4 +8,7 @@
     <string name="copied_message">消息已复制</string>
     <string name="hint_enter_a_message">请输入信息。。。</string>
     <string name="on_log_click_message">Your custom long click handler</string>
+    <string name="settings">设置</string>
+    <string name="friend_invitation">好友请求</string>
+    <string name="me">我</string>
 </resources>

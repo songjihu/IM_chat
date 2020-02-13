@@ -29,3 +29,12 @@ allprojects {
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
+
+ext {
+    compileSdkVersion = 28
+    minSdkVersion = 17
+    targetSdkVersion = compileSdkVersion
+
+    appCompatVersion = "1.1.0-alpha01"
+}
+

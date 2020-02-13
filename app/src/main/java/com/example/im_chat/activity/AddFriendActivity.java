@@ -1,6 +1,7 @@
 package com.example.im_chat.activity;
 
 
+import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 import org.jivesoftware.smack.ConnectionListener;
@@ -50,6 +51,7 @@ import com.example.im_chat.R;
 import com.example.im_chat.adapter.AddAdapter;
 import com.example.im_chat.adapter.SecondHomeAdapter;
 import com.example.im_chat.entity.Friend;
+import com.example.im_chat.entity.MyInfo;
 import com.example.im_chat.entity.UserInfo;
 import com.example.im_chat.listener.OnItemClickListener;
 import com.example.im_chat.media.holder.CustomHolderDialogsActivity;
@@ -68,6 +70,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+
+import me.yokeyword.eventbusactivityscope.EventBusActivityScope;
 
 /*
  *@author  Eric
@@ -101,24 +105,25 @@ public class AddFriendActivity extends Activity implements ConnectionListener, R
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
-    public void onEvent(String data) {
+    public void onEvent(MyInfo data) {
         //接收用户jid
-        uTitles=data;
-        //Log.i("（）（）（）（）（）（）",data);
+        uTitles=data.getUserId();
+        //Log.i("（）（）（）（）（）（）",uTitles);
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.addfriend);
-
+        EventBusActivityScope.getDefault(AddFriendActivity.this).register(this);
+        EventBus.getDefault().register(this);
         edit_addfriend = (EditText) findViewById(R.id.edit_addfriend);
         btn_searchfriend = (Button) findViewById(R.id.btn_searchfriend);
         recyclerView=(RecyclerView)findViewById(R.id.add_recycleView) ;//循环列表
         recyclerView.setLayoutManager(new LinearLayoutManager(AddFriendActivity.this));//设置manager
-        recyclerView.setAdapter(new AddAdapter(AddFriendActivity.this));//设置adapter
+        recyclerView.setAdapter(new AddAdapter(AddFriendActivity.this,uTitles));//设置adapter
         handler=new Handler();//创建属于主线程的handler
-        mAdapter = new AddAdapter(this);//定义item的适配器
+        mAdapter = new AddAdapter(AddFriendActivity.this,uTitles);//定义item的适配器
 
 
         //name = getIntent().getStringExtra("name");
@@ -294,6 +299,13 @@ public class AddFriendActivity extends Activity implements ConnectionListener, R
     @Override
     public void presenceChanged(Presence presence) {
 
+    }
+
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        EventBus.getDefault().unregister(this);
     }
 
 
