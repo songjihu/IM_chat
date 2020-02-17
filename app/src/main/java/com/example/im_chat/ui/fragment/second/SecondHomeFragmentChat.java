@@ -154,15 +154,6 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
             public void onClick(View view) {
                 //新建一个显式意图，第一个参数为当前Activity类对象，第二个参数为你要打开的Activity类
                 Intent intent =new Intent(getActivity(), AddFriendActivity.class);
-                //用Bundle携带数据
-                Bundle bundle=new Bundle();
-                //传递name参数为name到下一层
-                //bundle.putString("id",uuu.getUserId());
-                //bundle.putString("name",uuu.getUserName());
-                //bundle.putString("id","20");
-                //bundle.putString("name",uuu.getUserName());
-                //Log.i("4523543254获取到的name值为",uuu.getUserName());
-                intent.putExtras(bundle);
                 startActivity(intent);
             }
         });

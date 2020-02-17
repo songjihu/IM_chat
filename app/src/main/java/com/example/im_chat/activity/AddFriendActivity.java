@@ -126,15 +126,6 @@ public class AddFriendActivity extends Activity implements ConnectionListener, R
         mAdapter = new AddAdapter(AddFriendActivity.this,uTitles);//定义item的适配器
 
 
-        //name = getIntent().getStringExtra("name");
-        //password = getIntent().getStringExtra("password");
-
-        // 获取好友名单
-        //friendsList = serachFriends();
-        //设置数据到适配器
-        //mAdapter.setDatas(friendsList);
-
-
         initXMPPTCPConnection(name,password);
         roster.setSubscriptionMode(Roster.SubscriptionMode.manual);
         //监听好友上下线模块
