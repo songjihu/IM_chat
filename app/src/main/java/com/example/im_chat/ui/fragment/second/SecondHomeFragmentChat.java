@@ -24,7 +24,10 @@ import org.jivesoftware.smack.roster.RosterEntry;
 import java.util.ArrayList;
 import java.util.List;
 import android.os.Handler;
+import android.widget.Toast;
 
+import com.allenliu.sidebar.ISideBarSelectCallBack;
+import com.allenliu.sidebar.SideBar;
 import com.example.im_chat.R;
 import com.example.im_chat.activity.AddFriendActivity;
 import com.example.im_chat.activity.LoginActivity;
@@ -50,6 +53,7 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
     private Handler handler;
     private MyXMPPTCPConnectionOnLine connectionOnLine;//设置在线的连接
     private Button go_add;
+    private SideBar bar;
 
 
 
@@ -190,6 +194,15 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
                     mInAtTop = false;
                 }
 
+            }
+        });
+
+        bar= (SideBar) view.findViewById(R.id.slid_bar_friend);
+        bar.setOnStrSelectCallBack(new ISideBarSelectCallBack() {
+            @Override
+            public void onSelectStr(int index, String selectStr) {
+                //Toast.makeText(getActivity(),selectStr,Toast.LENGTH_SHORT).show();
+                Log.i("----------------:",selectStr);
             }
         });
 

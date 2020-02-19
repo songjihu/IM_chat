@@ -215,7 +215,8 @@ public class AddFriendActivity extends Activity implements ConnectionListener, R
                 try {
                     boolean flag=false;
                     Connection cn= JDBCUtils.getConnection();
-                    String sql="SELECT * FROM `user` WHERE user_name LIKE '%"+inputStr+"%'";//模糊搜索
+                    String sql="SELECT * FROM `user` WHERE user_name LIKE '%"+inputStr+"%' or "
+                            + "jid = '"+inputStr+"'";//模糊搜索
                     Statement st=(Statement)cn.createStatement();
                     ResultSet rs=st.executeQuery(sql);
                     while(rs.next()){
@@ -224,6 +225,7 @@ public class AddFriendActivity extends Activity implements ConnectionListener, R
                         friends.add(friend);
                     }
                     if(!flag){
+
                         Looper.prepare();
                         Toast.makeText(AddFriendActivity.this, "未搜索到用户", Toast.LENGTH_SHORT).show();
                         Looper.loop();

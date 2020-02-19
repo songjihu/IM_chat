@@ -194,7 +194,6 @@ public class FriendInvitationFragment extends SupportFragment {
                             handler.post(runnableAdd);//更新界面
                             //InvitationList.add(addItem);
                         }
-
                         //mAdapter.addData(rs.getString("send_name")+"(jid:"+rs.getString("jid")+")");
                         //Toast.makeText(getContext(), "add"+rs.getString("send_name"), Toast.LENGTH_SHORT).show();
                     }
