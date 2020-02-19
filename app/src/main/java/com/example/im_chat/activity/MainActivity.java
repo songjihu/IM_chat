@@ -98,6 +98,7 @@ public class MainActivity extends SupportActivity implements BaseMainFragment.On
 
 
 
+
     private void initView() {
         mBottomBar = (BottomBar) findViewById(R.id.bottomBar);
 

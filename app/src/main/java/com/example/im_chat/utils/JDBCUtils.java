@@ -53,6 +53,10 @@ public class JDBCUtils {
         closeStatement(stmt);
         closeConnection(con);
     }
+    public static void close(ResultSet rs,Statement stmt) {
+        closeResultSet(rs);
+        closeStatement(stmt);
+    }
     public static void close(Statement stmt1,Statement stmt2,Connection con) {
         closeStatement(stmt1);
         closeStatement(stmt2);

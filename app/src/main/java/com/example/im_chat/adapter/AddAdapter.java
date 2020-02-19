@@ -25,6 +25,7 @@ import com.example.im_chat.entity.MyInfo;
 import com.example.im_chat.listener.OnItemClickListener;
 import com.example.im_chat.other.JID;
 import com.example.im_chat.utils.JDBCUtils;
+import com.example.im_chat.utils.MyXMPPTCPConnection;
 import com.example.im_chat.utils.MyXMPPTCPConnectionOnLine;
 
 import org.greenrobot.eventbus.EventBus;
@@ -33,6 +34,7 @@ import org.greenrobot.eventbus.ThreadMode;
 import org.jivesoftware.smack.ConnectionListener;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smack.chat.ChatManager;
 import org.jivesoftware.smack.roster.Roster;
 
 import java.sql.Connection;
@@ -40,6 +42,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 import me.yokeyword.eventbusactivityscope.EventBusActivityScope;
@@ -60,6 +63,8 @@ public class AddAdapter extends RecyclerView.Adapter <AddAdapter.VH> {
     private LayoutInflater mInflater;
     private OnItemClickListener mClickListener;
     private MyInfo myInfo=new MyInfo();
+    private Calendar calendar = Calendar.getInstance();//获取时间
+
 
 
     public AddAdapter(Context context,String jid){
@@ -91,14 +96,22 @@ public class AddAdapter extends RecyclerView.Adapter <AddAdapter.VH> {
                             String friendJid = holder.jid.getText().toString();
                             String friendName = holder.name.getText().toString();
                             friendJid= JID.escapeNode(friendJid);
-                            addFriend(friendJid, friendName,"默认分组");
+                            addFriend(friendJid, "","friend");
                             Connection cn= JDBCUtils.getConnection();
-                            String sql = "insert into friendlist (jid,fjid,accepted) values (?,?,?);";
+                            String sql = "insert into friendlist (jid,fjid,send_time,accept_time,send_name,more) values (?,?,?,?,?,?);";
                             PreparedStatement pstm = cn.prepareStatement(sql);
                             //通过setString给4个问好赋值，下面的course_id，user_id，course_time，us_job_id都是已有值的变量，不要误会了
-                            pstm.setString(1, JID.unescapeNode(myInfo.getUserId()));
-                            pstm.setString(2, JID.unescapeNode(friendJid));
-                            pstm.setString(3, "1");
+                            pstm.setString(1, JID.unescapeNode(myInfo.getUserId()));//申请人id
+                            pstm.setString(2, JID.unescapeNode(friendJid));//被申请人id
+                            int year = calendar.get(Calendar.YEAR);
+                            int month = calendar.get(Calendar.MONTH)+1;
+                            int day = calendar.get(Calendar.DAY_OF_MONTH);
+                            int hour = calendar.get(Calendar.HOUR_OF_DAY);
+                            int minute = calendar.get(Calendar.MINUTE);
+                            pstm.setString(3, year+"-"+month+"-"+day+" "+hour+":"+minute);//发送时间
+                            pstm.setString(4, "");//接受时间
+                            pstm.setString(5, myInfo.getUserName());//发送姓名
+                            pstm.setString(6, "备注");//发送备注
                             //执行更新数据库
                             pstm.executeUpdate();
                             //关闭访问
@@ -106,10 +119,11 @@ public class AddAdapter extends RecyclerView.Adapter <AddAdapter.VH> {
                             Toast.makeText(context,"申请已经发送", Toast.LENGTH_SHORT).show();
                             Looper.loop();//增加部分
                         } catch (Exception e) {
+                            e.printStackTrace();
                             Toast.makeText(context,"申请发生异常", Toast.LENGTH_SHORT).show();
                             Looper.loop();//增加部分
                             //System.out.println("申请发生异常！！");
-                            e.printStackTrace();
+
                         }
                     }
                 });
@@ -166,6 +180,7 @@ public class AddAdapter extends RecyclerView.Adapter <AddAdapter.VH> {
     public int getItemCount() {
         return mItems.size();
     }
+
 
 
 

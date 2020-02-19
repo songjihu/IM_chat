@@ -10,10 +10,15 @@ import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smack.chat.Chat;
+import org.jivesoftware.smack.chat.ChatManager;
+import org.jivesoftware.smack.chat.ChatManagerListener;
+import org.jivesoftware.smack.chat.ChatMessageListener;
 import org.jivesoftware.smack.filter.AndFilter;
 import org.jivesoftware.smack.filter.PacketFilter;
 import org.jivesoftware.smack.filter.PacketTypeFilter;
 import org.jivesoftware.smack.filter.StanzaTypeFilter;
+import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.packet.Stanza;
@@ -34,7 +39,7 @@ import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Message;
+import android.os.Looper;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
@@ -77,7 +82,7 @@ import me.yokeyword.eventbusactivityscope.EventBusActivityScope;
  *@author  Eric
  *@2015-9-7上午9:28:52
  */
-public class AddFriendActivity extends Activity implements ConnectionListener, RosterListener {
+public class AddFriendActivity extends Activity implements ConnectionListener, RosterListener, ChatManagerListener, ChatMessageListener, View.OnClickListener {
     private EditText edit_addfriend;
     private Button btn_searchfriend;
     private String name,password,response,acceptAdd,alertName,alertSubName;
@@ -93,6 +98,8 @@ public class AddFriendActivity extends Activity implements ConnectionListener, R
     private List<String> sList = new ArrayList<String>();//搜索参数
     private Handler handler;//更新界面
     private String input;//输入字符
+
+
 
 
 
@@ -217,8 +224,9 @@ public class AddFriendActivity extends Activity implements ConnectionListener, R
                         friends.add(friend);
                     }
                     if(!flag){
+                        Looper.prepare();
                         Toast.makeText(AddFriendActivity.this, "未搜索到用户", Toast.LENGTH_SHORT).show();
-
+                        Looper.loop();
                     }
                     JDBCUtils.close(rs,st,cn);
                 } catch (SQLException e) {
@@ -300,4 +308,18 @@ public class AddFriendActivity extends Activity implements ConnectionListener, R
     }
 
 
+    @Override
+    public void onClick(View v) {
+
+    }
+
+    @Override
+    public void chatCreated(Chat chat, boolean createdLocally) {
+
+    }
+
+    @Override
+    public void processMessage(Chat chat, Message message) {
+
+    }
 }
