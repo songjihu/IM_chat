@@ -12,6 +12,15 @@ public class Friend implements Parcelable{
     private String jid;
     private String name;
     private String online;
+    private String lastmessage;
+
+    public String getLastmessage() {
+        return lastmessage;
+    }
+
+    public void setLastmessage(String lastmessage) {
+        this.lastmessage = lastmessage;
+    }
 
     public String getOnline() {
         return online;
@@ -28,6 +37,17 @@ public class Friend implements Parcelable{
         this.jid = jid;
         this.name = name;
     }
+
+    public Friend(String jid, String name,String lastmessage,String online) {
+        this.jid = jid;
+        this.name = name;
+        this.online = online;
+        this.lastmessage=lastmessage;
+    }
+
+
+
+
 
     public Friend(String jid, String name,String online) {
         this.jid = jid;

@@ -67,5 +67,6 @@ dependencies {
     implementation project(path: ':sidebar')
     implementation 'com.github.ljphawk:SwipeMenuLayout:1.05'
     implementation 'com.github.CymChad:BaseRecyclerViewAdapterHelper:2.9.46'
+    implementation files('libs\\pinyin4j-2.5.0.jar')
 }
 

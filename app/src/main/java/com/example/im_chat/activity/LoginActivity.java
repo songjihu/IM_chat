@@ -305,6 +305,8 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> ,
                         return 1;
                     }else{
                         if(isLogin){
+                            connection.disconnect();
+                            connection.connect();
                             connection.login(params[0].get(0), params[0].get(1));
                             return 2;
                         }else{

@@ -27,6 +27,4 @@ public class InvItemAdapter extends BaseQuickAdapter<InvitationInfo, BaseViewHol
         helper.addOnClickListener(R.id.tv_menu1).addOnClickListener(R.id.tv_menu2);
     }
 
-
-
 }

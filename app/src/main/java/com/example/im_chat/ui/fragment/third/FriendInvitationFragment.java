@@ -55,17 +55,15 @@ import me.yokeyword.fragmentation.SupportFragment;
 public class FriendInvitationFragment extends SupportFragment {
     private Toolbar mToolbar;
     private RecyclerView recyclerView;//好友申请列表
-    private List<InvitationInfo> InvitationList=new ArrayList<>();;//list存储信息集合
+    private List<InvitationInfo> InvitationList=new ArrayList<>();//list存储信息集合
     private Handler handler;//更新界面
     private InvItemAdapter  mAdapter;//配置适配器
     private String uTitles;//用户jid
+    private String uTitles_name;//用户姓名
     private MyXMPPTCPConnectionOnLine connection;
     private Calendar calendar = Calendar.getInstance();//获取时间
     private InvitationInfo addItem;//被加入项
     private CountDownLatch countDownLatch = new CountDownLatch(1);//pv操作量
-
-
-
 
 
 
@@ -79,6 +77,7 @@ public class FriendInvitationFragment extends SupportFragment {
     public void onEvent(MyInfo data) {
         //接收用户jid
         uTitles=data.getUserId();
+        uTitles_name=data.getUserName();
         Log.i("（）（）（）（）（）（）",uTitles);
     }
 
@@ -105,7 +104,7 @@ public class FriendInvitationFragment extends SupportFragment {
                     try {
                         serachInvi(uTitles);
                         Log.i("111111:",InvitationList.size()+"");
-                        Thread.sleep(3000);
+                        Thread.sleep(5000);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -166,7 +165,6 @@ public class FriendInvitationFragment extends SupportFragment {
                 mAdapter.addData(addItem);
             }
         }
-
     };
 
 
@@ -275,7 +273,7 @@ public class FriendInvitationFragment extends SupportFragment {
                     Connection cn= JDBCUtils.getConnection();//更新数据库表
                     Log.i("13234",jid+"==="+fjid);
                     String t=year+"-"+month+"-"+day+" "+hour+":"+minute;
-                    String sql = "update friendlist set accepted ='1' ,accept_time= '"+t+"' where jid = '"+JID.unescapeNode(jid)+"' and fjid = '"+JID.unescapeNode(fjid)+"'";
+                    String sql = "update friendlist set accepted ='1' ,accept_time= '"+t+"', accept_name='"+uTitles_name+ "' where jid = '"+JID.unescapeNode(jid)+"' and fjid = '"+JID.unescapeNode(fjid)+"'";
                     PreparedStatement pstm = cn.prepareStatement(sql);
                     //执行更新数据库
                     pstm.executeUpdate();

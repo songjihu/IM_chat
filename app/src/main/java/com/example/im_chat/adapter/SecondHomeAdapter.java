@@ -9,93 +9,37 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 
+import com.chad.library.adapter.base.BaseQuickAdapter;
+import com.chad.library.adapter.base.BaseViewHolder;
 import com.example.im_chat.R;
 import com.example.im_chat.entity.Friend;
+import com.example.im_chat.entity.InvitationInfo;
 import com.example.im_chat.listener.OnItemClickListener;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import cn.ljp.swipemenu.SwipeMenuLayout;
 
 /**
  *   联系人列表适配器
  * @auther songjihu
  * @since 2020/2/4 9:40
  */
-public class SecondHomeAdapter extends RecyclerView.Adapter<SecondHomeAdapter.VH> {
-    private List<Friend> mItems = new ArrayList<>();
-    private LayoutInflater mInflater;
-
-    private OnItemClickListener mClickListener;
+public class SecondHomeAdapter extends BaseQuickAdapter<Friend, BaseViewHolder> {
 
 
-    public SecondHomeAdapter(Context context) {
-        mInflater = LayoutInflater.from(context);
+    public SecondHomeAdapter(List<Friend> mShowItems) {
+        super(R.layout.act_friend, mShowItems);
     }
 
     @Override
-    public VH onCreateViewHolder(ViewGroup parent, int viewType) {
-        //R.layout.item_bxz_home_first  为item的布局形式
-        View view = mInflater.inflate(R.layout.act_friends, parent, false);
-
-        final VH holder = new VH(view);
-        holder.itemView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                int position = holder.getAdapterPosition();
-                if (mClickListener != null) {
-                    mClickListener.onItemClick(position, v, holder);
-                }
-            }
-        });
-
-        return holder;
-
+    protected void convert(BaseViewHolder helper, Friend item) {
+        int position = helper.getLayoutPosition();
+        String name = item.getName();
+        String lastmsg = item.getLastmessage();
+        ((TextView) helper.getView(R.id.dialogName_f)).setText(name);//姓名
+        ((TextView) helper.getView(R.id.dialogLastMessage_f)).setText(lastmsg);//最后发言
     }
 
-    @Override
-    public void onBindViewHolder(VH holder, int position) {
-        Friend item = mItems.get(position);
-
-        // 把每个图片视图设置不同的Transition名称, 防止在一个视图内有多个相同的名称, 在变换的时候造成混乱
-        // Fragment支持多个View进行变换, 使用适配器时, 需要加以区分
-        ViewCompat.setTransitionName(holder.name, String.valueOf(position) + "1");
-        ViewCompat.setTransitionName(holder.last_word, String.valueOf(position) + "2");
-
-
-        holder.name.setText(item.getName());
-        holder.last_word.setText(item.getName());
-
-
-
-    }
-
-    public void setDatas(List<Friend> items) {
-        mItems.clear();
-        mItems.addAll(items);
-    }
-
-    @Override
-    public int getItemCount() {
-        return mItems.size();
-    }
-
-    public Friend getItem(int position) {
-        return mItems.get(position);
-    }
-
-    public void setOnItemClickListener(OnItemClickListener itemClickListener) {
-        this.mClickListener = itemClickListener;
-    }
-
-    public class VH extends RecyclerView.ViewHolder {
-        public TextView name;//好友名，小组名
-        public TextView last_word;//最后发言人+内容
-
-
-        public VH(View itemView) {
-            super(itemView);
-            name = (TextView) itemView.findViewById(R.id.team_dialogName);
-            last_word = (TextView) itemView.findViewById(R.id.team_dialogLastMessage);
-        }
-    }
 }

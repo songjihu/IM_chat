@@ -10,21 +10,22 @@
         android:background="?attr/selectableItemBackground">
 
         <com.stfalcon.chatkit.utils.ShapeImageView
-            android:id="@id/dialogAvatar"
+            android:id="@+id/dialogAvatar_f"
             android:layout_width="@dimen/dialog_avatar_width"
             android:layout_height="@dimen/dialog_avatar_height"
             android:layout_margin="16dp"/>
 
         <TextView
-            android:id="@id/dialogName"
+            android:id="@+id/dialogName_f"
+            android:textColor="@color/black"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginEnd="16dp"
             android:layout_marginRight="16dp"
             android:layout_marginTop="19dp"
-            android:layout_toEndOf="@id/dialogAvatar"
+            android:layout_toEndOf="@id/dialogAvatar_f"
             android:layout_toLeftOf="@id/dialogDate"
-            android:layout_toRightOf="@id/dialogAvatar"
+            android:layout_toRightOf="@id/dialogAvatar_f"
             android:layout_toStartOf="@id/dialogDate"
             android:ellipsize="end"
             android:fontFamily="@string/font_fontFamily_medium"
@@ -46,18 +47,19 @@
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@id/dialogName"
+            android:layout_below="@id/dialogName_f"
             android:layout_marginEnd="16dp"
             android:layout_marginRight="16dp"
             android:layout_marginTop="7dp"
-            android:layout_toEndOf="@id/dialogAvatar"
-            android:layout_toRightOf="@id/dialogAvatar">
+            android:layout_toEndOf="@id/dialogAvatar_f"
+            android:layout_toRightOf="@id/dialogAvatar_f">
 
 
 
 
             <TextView
-                android:id="@id/dialogLastMessage"
+                android:id="@+id/dialogLastMessage_f"
+                android:textColor="@color/gray_dark"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
@@ -71,9 +73,9 @@
             android:id="@id/dialogUnreadBubble"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignEnd="@id/dialogAvatar"
-            android:layout_alignRight="@id/dialogAvatar"
-            android:layout_alignTop="@id/dialogAvatar"
+            android:layout_alignEnd="@id/dialogAvatar_f"
+            android:layout_alignRight="@id/dialogAvatar_f"
+            android:layout_alignTop="@id/dialogAvatar_f"
             android:layout_marginEnd="-5dp"
             android:layout_marginRight="-5dp"
             android:layout_marginTop="-5dp"
