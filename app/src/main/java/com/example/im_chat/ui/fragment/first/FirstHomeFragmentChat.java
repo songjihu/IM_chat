@@ -248,7 +248,7 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
                         //是空跳过，否则存入team_id
                     }
                     else{
-                        team_id[i]=rs.getString(j);//j为第几列
+                        accept_id[i]=rs.getString(j);//j为第几列
                         team_location[i]=j;
                         Log.i("-_-_-_-_-_-_-_-_",i+":"+rs.getString(j));
                         i++;
@@ -263,7 +263,7 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
                 //读取team名字
                 for(i=0;i<team_number;i++)
                 {
-                    sql="SELECT * FROM `team_info` WHERE team_id = "+team_id[i];
+                    sql="SELECT * FROM `team_info` WHERE accept_id = "+accept_id[i];
                     rs=st.executeQuery(sql);
                     if(rs.next()) ; else break;
                     team_name[i]=rs.getString("team_name");
@@ -276,7 +276,7 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
 
                 while(rs.next()){
                     for (i=0;i<team_number;i++){
-                        if(rs.getString(team_location[i])!=null&&rs.getString(team_location[i]).equals(team_id[i])){
+                        if(rs.getString(team_location[i])!=null&&rs.getString(team_location[i]).equals(accept_id[i])){
                             //加入二维数组
                             if(rs.getString(team_location[i]).equals(uTitles))
                             {

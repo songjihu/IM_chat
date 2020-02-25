@@ -43,6 +43,10 @@
             android:configChanges="orientation|screenSize">
         </activity>
         <activity android:name=".activity.AddFriendActivity"></activity>
+        <activity android:name=".media.holder.CustomHolderDialogsActivity"></activity>
+        <activity android:name=".media.holder.CustomHolderMessagesActivity"></activity>
+        <activity android:name=".media.DemoDialogsActivity"></activity>
+        <activity android:name=".media.DemoMessagesActivity"></activity>
     </application>
 
 </manifest>

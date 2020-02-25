@@ -7,8 +7,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.widget.Toast;
-
-
 import com.example.im_chat.R;
 import com.example.im_chat.db.DaoMaster;
 import com.example.im_chat.db.DaoSession;
@@ -23,6 +21,7 @@ import com.example.im_chat.media.holder.holders.messages.CustomIncomingImageMess
 import com.example.im_chat.media.holder.holders.messages.CustomIncomingTextMessageViewHolder;
 import com.example.im_chat.media.holder.holders.messages.CustomOutcomingImageMessageViewHolder;
 import com.example.im_chat.media.holder.holders.messages.CustomOutcomingTextMessageViewHolder;
+import com.example.im_chat.other.JID;
 import com.example.im_chat.utils.AppUtils;
 import com.example.im_chat.utils.MyXMPPTCPConnectionOnLine;
 import com.stfalcon.chatkit.messages.MessageHolders;
@@ -31,8 +30,6 @@ import com.stfalcon.chatkit.messages.MessagesList;
 import com.stfalcon.chatkit.messages.MessagesListAdapter;
 
 import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.chat.Chat;
 import org.jivesoftware.smack.chat.ChatManager;
@@ -42,19 +39,27 @@ import org.jivesoftware.smack.chat.ChatMessageListener;
 import java.util.ArrayList;
 
 
+/**
+ *   聊天activity
+ * @auther songjihu
+ * @since 2020/2/25 14:46
+ */
 public class CustomHolderMessagesActivity extends DemoMessagesActivity
         implements MessagesListAdapter.OnMessageLongClickListener<Message>,
         MessageInput.InputListener,
         MessageInput.AttachmentsListener, ChatManagerListener,
         ChatMessageListener {
 
-    static String team_member[]= new String[20];
-    String team_member_ex[]= new String[20];
     int f_number;
     private MyXMPPTCPConnectionOnLine connection;//连接
     private ChatManager chatManager;//会话管理
-    private Chat chat[]=new Chat[20];//会话
+    private Chat chat;//会话
     private static DaoSession daoSession;
+
+    private String user_name;
+    private static String user_id;
+    private String friend_name;
+    private String friend_id;
 
     static ArrayList<String> avatars = new ArrayList<String>() {
         {
@@ -73,7 +78,7 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
                     //ChatMessage chatMessage = new ChatMessage((String) msg.obj, 1);
                     Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper.getMsgDate());
                     //messageList.add(chatMessage);
-                    if((helper.getMsgFromId()).equals(team_member[19]))
+                    if((helper.getMsgFromId()).equals(user_id))
                     {
                         //啥也不干
                     }else{
@@ -112,7 +117,13 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EventBus.getDefault().register(this);//注册
+        Bundle bundle = this.getIntent().getExtras();
+        //从登陆activity的bundle中获取用户名
+        user_name = bundle.getString("name");
+        user_id = bundle.getString("jid");
+        friend_id= bundle.getString("f_jid");
+        friend_name=bundle.getString("f_name");
+        Log.i("4个参数","1:"+user_id+"--2:"+user_name+"--3:"+friend_id+"--4:"+friend_name);
         initGreenDao();
         setContentView(R.layout.activity_custom_holder_messages);
         //消息列表布局
@@ -139,13 +150,6 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
         return true;
     }
 
-    //传递用户成员
-    @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
-    public void onEvent(String data[]) {
-        //接收用户姓名
-        team_member=data;
-        //Log.i("（）（）（）（）（）（）",data);
-    }
 
     //点击加号的事件，刷新出一个图片
     @Override
@@ -172,22 +176,12 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
             //第一个参数是 用户的ID
             //第二个参数是 ChatMessageListener，我们这里传null就好了
             //群组共计x个成员，建立会话
-            for (int i=0;i<f_number;i++)
-            {
-                chat[i]=chatManager.createChat(team_member_ex[i], null);
-            }
+            chat=chatManager.createChat(JID.escapeNode(friend_id)+"@123.56.163.211", null);
 
         }
     }
 
     private void initAdapter() {
-        //加后缀
-        for(int i=0;i<20;i++){
-            if(team_member[i]==null) {f_number=i;break;}
-            team_member_ex[i]=team_member[i]+"@gcsj-app";
-            //Log.i("_)_)_)_)_)_",i+":"+team_member[i]);
-        }
-
         //We can pass any data to ViewHolder with payload
         //我们可以传递任何数据到ViewHolder用payload
         //定义一个 来消息 文本 的payload
@@ -219,8 +213,9 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
                         R.layout.item_custom_outcoming_image_message);
 
         //配置适配器内容，第一个参数为发送者的id，id不同则在右侧
-        super.team_id=team_member[18];//传入小组编号
-        super.messagesAdapter = new MessagesListAdapter<>(team_member[19], holdersConfig, super.imageLoader);
+        super.accept_id =user_id;//接收者为此用户
+        super.send_id =friend_id;//发送者为好友
+        super.messagesAdapter = new MessagesListAdapter<>(user_id, holdersConfig, super.imageLoader);
         //配置点击事件
         super.messagesAdapter.setOnMessageLongClickListener(this);
         super.messagesAdapter.setLoadMoreListener(this);
@@ -228,10 +223,9 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
         messagesList.setAdapter(super.messagesAdapter);
     }
 
-    //给群组中的每个人都发消息
-
+    //发消息
     private void sendChatMessage(String msgContent){
-        MessageTranslateTo helper=new MessageTranslateTo(team_member[17],team_member[19],team_member[18],msgContent);
+        MessageTranslateTo helper=new MessageTranslateTo(user_name,user_id,friend_id,msgContent);
         User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),avatars.get(0),true);
         MessageTranslateBack helper1=new MessageTranslateBack(helper.getMsgJson());
         Log.i("2发送222222222222222",helper.getMsgJson());
@@ -239,16 +233,13 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
         messagesAdapter.addToStart(message,true);//加入下方列表
         Log.i("2发送222222222222222","222");
 
-        for(int i=0;i<f_number;i++)
-        {
-            if(chat[i]!= null){
-                try {
-                    //发送消息，参数为发送的消息内容
-                    chat[i].sendMessage(helper.getMsgJson());
-                    Log.i("0发送",helper.getMsgJson());
-                } catch (SmackException.NotConnectedException e) {
-                    e.printStackTrace();
-                }
+        if(chat!= null){
+            try {
+                //发送消息，参数为发送的消息内容
+                chat.sendMessage(helper.getMsgJson());
+                Log.i("0发送",helper.getMsgJson());
+            } catch (SmackException.NotConnectedException e) {
+                e.printStackTrace();
             }
         }
     }

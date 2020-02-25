@@ -18,6 +18,7 @@ import com.example.im_chat.helper.MessageTranslateBack;
 import com.example.im_chat.media.data.fixtures.MessagesFixtures;
 import com.example.im_chat.media.data.model.Message;
 import com.example.im_chat.media.data.model.User;
+import com.example.im_chat.other.JID;
 import com.example.im_chat.utils.AppUtils;
 import com.squareup.picasso.Picasso;
 import com.stfalcon.chatkit.commons.ImageLoader;
@@ -32,8 +33,10 @@ import java.util.List;
 import java.util.Locale;
 
 
-/*
- * Created by troy379 on 04.04.17.
+/**
+ *   接收消息
+ * @auther songjihu
+ * @since 2020/2/25 15:52
  */
 public abstract class DemoMessagesActivity extends AppCompatActivity
         implements MessagesListAdapter.SelectionListener,
@@ -52,7 +55,8 @@ public abstract class DemoMessagesActivity extends AppCompatActivity
     private ChatMessage msg;
     private List new_msgs = new ArrayList<Message>();
     private List input_msgs = new ArrayList<Message>();
-    public String team_id;
+    public String accept_id;
+    public String send_id;
     private DaoSession daoSession;
     static ArrayList<String> avatars = new ArrayList<String>() {
         {
@@ -96,10 +100,21 @@ public abstract class DemoMessagesActivity extends AppCompatActivity
         int size = msgs.size();
         //将数据库中最新的100条加入
         for (int j = size-1; j >=0; j--) {
+            //Log.i("本地数据库大小",":"+size);
             msg= (ChatMessage) msgs.get(j);
             MessageTranslateBack helper=new MessageTranslateBack((String) msg.getMsg());
             if(new_msgs.size()==100) break;
-            if(helper.getMsgTo().equals(team_id)&&msg!=null){
+            Log.i("本地数据库",":"+JID.unescapeNode(helper.getMsgTo())+"_____"+JID.unescapeNode(accept_id));
+            if(JID.unescapeNode(helper.getMsgTo()).equals(JID.unescapeNode(accept_id))
+                    &&JID.unescapeNode(helper.getMsgFromId()).equals(JID.unescapeNode(send_id))
+                    &&msg!=null){
+                User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),avatars.get(0),true);
+                Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper.getMsgDate());
+                new_msgs.add(message);//从最新一条开始添加
+            }
+            if(JID.unescapeNode(helper.getMsgTo()).equals(JID.unescapeNode(accept_id))
+                    &&JID.unescapeNode(helper.getMsgFromId()).equals(JID.unescapeNode(send_id))
+                    &&msg!=null){
                 User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),avatars.get(0),true);
                 Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper.getMsgDate());
                 new_msgs.add(message);//从最新一条开始添加

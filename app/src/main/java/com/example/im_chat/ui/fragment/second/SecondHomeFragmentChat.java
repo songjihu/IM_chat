@@ -47,6 +47,7 @@ import com.example.im_chat.entity.InvitationInfo;
 import com.example.im_chat.entity.MyInfo;
 import com.example.im_chat.listener.OnItemClickListener;
 import com.example.im_chat.media.holder.CustomHolderDialogsActivity;
+import com.example.im_chat.media.holder.CustomHolderMessagesActivity;
 import com.example.im_chat.other.JID;
 import com.example.im_chat.utils.ChinesePinyinUtil;
 import com.example.im_chat.utils.JDBCUtils;
@@ -152,9 +153,20 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
         mAdapter.setOnItemClickListener(new BaseQuickAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(BaseQuickAdapter adapter, View view, int position) {
-                //CustomHolderDialogsActivity.open(getActivity());
                 Friend t=(Friend) adapter.getItem(position);
                 Log.i("点击了jid",t.getJid()+"姓名"+t.getName());
+                Intent intent =new Intent(getActivity(), CustomHolderMessagesActivity.class);
+                //用Bundle携带数据
+                Bundle bundle=new Bundle();
+                bundle.putString("jid",uTitles);
+                bundle.putString("name",uTitles_name);
+                bundle.putString("f_jid",t.getJid());
+                bundle.putString("f_name",t.getName());
+                //Log.i("4523543254获取到的name值为",uuu.getUserName());
+                intent.putExtras(bundle);
+                startActivity(intent);
+                //CustomHolderDialogsActivity.open(getActivity());
+
 
             }
         });
