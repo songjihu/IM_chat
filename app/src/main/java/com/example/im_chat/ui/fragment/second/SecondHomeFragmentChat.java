@@ -1,6 +1,7 @@
 package com.example.im_chat.ui.fragment.second;
 
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -72,8 +73,8 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
     private int mScrollTotal;
     private String uTitles = new String();
     private String uTitles_name = new String();
-    private Friend addItem;//被加入项
     private final static Comparator<Object> CHINA_COMPARE = Collator.getInstance(java.util.Locale.CHINA);//排序规则
+    private List<String> inputList = new ArrayList<String>();
 
     //显示好友列表
 
@@ -182,9 +183,10 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
                 for(int i=0;i<friendsList.size();i++){
                     String t=friendsList.get(i).getName();
                     t= ChinesePinyinUtil.getPinYinFirstChar(t);//获取第一个字母
-                    Log.i("获取到字符","--"+t+"--");
+
                     if(t.equals(selectStr)){
                         //找到选中的字符
+                        Log.i("获取到字符","--"+t+"--");
                         Log.i("跳转到:::",t+"位置:::"+i);
                         mRecy.scrollToPosition(i);
                         break;
@@ -195,7 +197,8 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
         });
 
         handler=new Handler();//创建属于主线程的handler
-        handler.post(runnableUi);
+        //handler.post(runnableUi);
+        inputList.add(uTitles);
         //实时刷新列表
         new Thread(new Runnable() {
             @Override
@@ -203,7 +206,8 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
                 boolean flg = false;
                 while(!flg){
                     try {
-                        serachFri(uTitles);
+                        //serachFri(uTitles);
+                        //new refreshTask().execute(inputList);
                         Thread.sleep(3000);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
@@ -220,79 +224,86 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
             @Override
             public void run() {
                 // 获取好友名单
-                serachFri(uTitles);
+                //serachFri(uTitles);
+                new refreshTask().execute(inputList);
             }
-        }, 2000);
+        }, 3000);
+        mRefreshLayout.setRefreshing(false);
     }
 
-    //搜索好友列表
-    private List<Friend> serachFri(final String inputStr){
-        final List<Friend> friends = new ArrayList<Friend>();//建立新的list
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Log.i("22342432","1");
-                    Connection cn= JDBCUtils.getConnection();
-                    String sql="SELECT * FROM `friendlist`WHERE fjid = '"+ JID.unescapeNode(inputStr)+"'AND accepted ='1'";//
-                    Statement st=(Statement)cn.createStatement();
-                    ResultSet rs=st.executeQuery(sql);
-                    while(rs.next()){
-                        if(!isIn(rs.getString("jid"))){
-                            //若不在则添加
-                            addItem=new Friend(
-                                    rs.getString("jid"),
-                                    rs.getString("send_name"),
-                                    "lastmsg",
-                                    "online");
-                            friendsList_s.add(addItem.getName());
-                            Log.i("list_s加入",addItem.getName());
-                            Collections.sort(friendsList_s, CHINA_COMPARE);//排序
-                            handler.post(runnableAdd);//更新界面
-                            //InvitationList.add(addItem);
-                        }
-                    }
-                    sql="SELECT * FROM `friendlist`WHERE jid = '"+ JID.unescapeNode(inputStr)+"'AND accepted ='1'";//
-                    rs=st.executeQuery(sql);
-                    while(rs.next()){
-                        if(!isIn(rs.getString("fjid"))){
-                            //若不在则添加
-                            addItem=new Friend(
-                                    rs.getString("fjid"),
-                                    rs.getString("accept_name"),
-                                    "lastmsg",
-                                    "online");
-                            friendsList_s.add(addItem.getName());
-                            Log.i("list_s加入",addItem.getName());
-                            Collections.sort(friendsList_s, CHINA_COMPARE);//排序
-                            handler.post(runnableAdd);//更新界面
-                            //InvitationList.add(addItem);
-                        }
-                    }
-                    JDBCUtils.close(rs,st,cn);
 
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
 
-        //mAdapter.setNewData(friends);
-        return friends;
 
-    }
-
-    Runnable runnableAdd =new  Runnable(){
+    private class refreshTask extends AsyncTask<List<String>, Object, Short> {
+        private List<Friend> addItem=new ArrayList<>();//被加入项
         @Override
-        public void run() {
-            //mAdapter.setNewData(InvitationList);
-            if(!isIn(addItem.getJid())){
-                int pos=friendsList_s.indexOf(addItem.getName());
-                Log.i("list_s加入位置",""+pos);
-                mAdapter.addData(pos,addItem);//加入
+        protected Short doInBackground(List<String>... params) {
+            try {
+                Log.i("22342432","1");
+                Connection cn= JDBCUtils.getConnection();
+                String sql="SELECT * FROM `friendlist`WHERE fjid = '"+ JID.unescapeNode(params[0].get(0))+"'AND accepted ='1'";//
+                Statement st=(Statement)cn.createStatement();
+                ResultSet rs=st.executeQuery(sql);
+                while(rs.next()){
+                    addItem.add(new Friend(
+                            rs.getString("jid"),
+                            rs.getString("send_name"),
+                            "lastmsg",
+                            "[离线]"));
+                }
+                sql="SELECT * FROM `friendlist`WHERE jid = '"+ JID.unescapeNode(params[0].get(0))+"'AND accepted ='1'";//
+                rs=st.executeQuery(sql);
+                while(rs.next()){
+                    addItem.add(new Friend(
+                            rs.getString("fjid"),
+                            rs.getString("accept_name"),
+                            "lastmsg",
+                            "[离线]"));
+                }
+                JDBCUtils.close(rs,st,cn);
+
+            } catch (SQLException e) {
+                e.printStackTrace();
+                return 0;
+            }
+
+            return 1;
+        }
+
+        @Override
+        protected void onPostExecute(Short state) {
+            switch (state){
+                case 0:
+                    Toast.makeText(getActivity(), "更新失败", Toast.LENGTH_SHORT).show();
+                    break;
+                case 1:
+                    if(mAdapter.getItemCount()==0) mAdapter.addData(addItem.get(0));
+                    boolean found=false;
+                    for(int i=0;i<addItem.size();i++){
+                        for(int j=0;j<mAdapter.getItemCount();j++){
+                            //不在并且>=左<=右当前则插入前边
+                            found=false;
+                            if(!isIn(addItem.get(i).getJid())){
+                                String t=mAdapter.getItem(j).getName();
+                                t= ChinesePinyinUtil.getPinYinFirstChar(t);//获取第一个字母
+                                if(ChinesePinyinUtil.getPinYinFirstChar(addItem.get(i).getName()).compareTo(t)<=0){
+                                    mAdapter.addData(j,addItem.get(i));
+                                    found=true;
+                                    break;
+                                }
+                            }
+                        }
+                        if(!isIn(addItem.get(i).getJid())&&!found){
+                            mAdapter.addData(addItem.get(i));
+                        }
+                    }
+                    Toast.makeText(getActivity(), "更新成功", Toast.LENGTH_SHORT).show();
+                    break;
+                default:
+                    break;
             }
         }
-    };
+    }
 
     //是否已在列表中
     private boolean isIn(String str){

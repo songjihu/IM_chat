@@ -37,9 +37,9 @@ public class SecondHomeAdapter extends BaseQuickAdapter<Friend, BaseViewHolder> 
     protected void convert(BaseViewHolder helper, Friend item) {
         int position = helper.getLayoutPosition();
         String name = item.getName();
-        String lastmsg = item.getLastmessage();
+        String state = item.getOnline();
         ((TextView) helper.getView(R.id.dialogName_f)).setText(name);//姓名
-        ((TextView) helper.getView(R.id.dialogLastMessage_f)).setText(lastmsg);//最后发言
+        ((TextView) helper.getView(R.id.dialogLastMessage_f)).setText(state);//状态
     }
 
 }
