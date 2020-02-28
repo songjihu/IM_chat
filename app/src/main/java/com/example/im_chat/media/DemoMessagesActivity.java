@@ -104,17 +104,22 @@ public abstract class DemoMessagesActivity extends AppCompatActivity
             msg= (ChatMessage) msgs.get(j);
             MessageTranslateBack helper=new MessageTranslateBack((String) msg.getMsg());
             if(new_msgs.size()==100) break;
-            Log.i("本地数据库",":"+JID.unescapeNode(helper.getMsgTo())+"_____"+JID.unescapeNode(accept_id));
+            //好友发送的消息
             if(JID.unescapeNode(helper.getMsgTo()).equals(JID.unescapeNode(accept_id))
                     &&JID.unescapeNode(helper.getMsgFromId()).equals(JID.unescapeNode(send_id))
                     &&msg!=null){
+                Log.i("本地数据库1",":"+JID.unescapeNode(helper.getMsgTo())+"__1___"+JID.unescapeNode(accept_id));
+                Log.i("本地数据库2",":"+JID.unescapeNode(helper.getMsgFromId())+"___2__"+JID.unescapeNode(send_id));
                 User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),avatars.get(0),true);
                 Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper.getMsgDate());
                 new_msgs.add(message);//从最新一条开始添加
             }
-            if(JID.unescapeNode(helper.getMsgTo()).equals(JID.unescapeNode(accept_id))
-                    &&JID.unescapeNode(helper.getMsgFromId()).equals(JID.unescapeNode(send_id))
+            //我发送的消息
+            if(JID.unescapeNode(helper.getMsgTo()).equals(JID.unescapeNode(send_id))
+                    &&JID.unescapeNode(helper.getMsgFromId()).equals(JID.unescapeNode(accept_id))
                     &&msg!=null){
+                Log.i("本地数据库1",":"+JID.unescapeNode(helper.getMsgTo())+"__1___"+JID.unescapeNode(send_id));
+                Log.i("本地数据库2",":"+JID.unescapeNode(helper.getMsgFromId())+"___2__"+JID.unescapeNode(accept_id));
                 User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),avatars.get(0),true);
                 Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper.getMsgDate());
                 new_msgs.add(message);//从最新一条开始添加

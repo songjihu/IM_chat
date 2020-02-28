@@ -120,8 +120,8 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
         Bundle bundle = this.getIntent().getExtras();
         //从登陆activity的bundle中获取用户名
         user_name = bundle.getString("name");
-        user_id = bundle.getString("jid");
-        friend_id= bundle.getString("f_jid");
+        user_id = JID.unescapeNode(bundle.getString("jid"));
+        friend_id= JID.unescapeNode(bundle.getString("f_jid"));
         friend_name=bundle.getString("f_name");
         Log.i("4个参数","1:"+user_id+"--2:"+user_name+"--3:"+friend_id+"--4:"+friend_name);
         initGreenDao();
@@ -238,6 +238,10 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
                 //发送消息，参数为发送的消息内容
                 chat.sendMessage(helper.getMsgJson());
                 Log.i("0发送",helper.getMsgJson());
+                //将所有接收到的消息，加入到数据库
+                ChatMessage chat_msg =new ChatMessage(null,(String) helper.getMsgJson());
+                daoSession.insert(chat_msg);
+                Log.i("数据库加入++++++",(String) helper.getMsgJson());
             } catch (SmackException.NotConnectedException e) {
                 e.printStackTrace();
             }

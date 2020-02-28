@@ -5,6 +5,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Intent;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Looper;
 import android.app.LoaderManager.LoaderCallbacks;
 
@@ -29,21 +30,26 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.im_chat.db.DaoMaster;
+import com.example.im_chat.db.DaoSession;
+import com.example.im_chat.entity.ChatMessage;
 import com.example.im_chat.entity.UserInfo;
 import com.example.im_chat.other.JID;
 
 import org.jivesoftware.smack.ConnectionListener;
+import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPConnection;
+import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.roster.Roster;
 import org.jivesoftware.smack.roster.RosterListener;
+import org.jivesoftware.smackx.offline.OfflineMessageManager;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -59,6 +65,7 @@ import android.widget.ImageView;
 
 import com.example.im_chat.R;
 import com.example.im_chat.utils.JDBCUtils;
+import com.example.im_chat.utils.MyXMPPTCPConnectionOffLine;
 import com.example.im_chat.utils.MyXMPPTCPConnectionOnLine;
 
 
@@ -97,7 +104,8 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> ,
     public static int getRequestReadContacts() {
         return REQUEST_READ_CONTACTS;
     }
-    private MyXMPPTCPConnectionOnLine connection;//聊天服务连接
+    private MyXMPPTCPConnectionOnLine connection_on;//在线聊天服务连接
+    private MyXMPPTCPConnectionOffLine connection_off;//离线聊天服务连接
     private Roster roster;
     private Boolean isLogin = false;
     private String name;
@@ -107,14 +115,27 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> ,
     private List<String> loginList = new ArrayList<String>();
 
 
-    private void initXMPPTCPConnection(){
-        connection = MyXMPPTCPConnectionOnLine.getInstance();
-        connection.addConnectionListener(this);
-        roster = Roster.getInstanceFor(connection);
-        roster.addRosterListener(this);
+    private void initXMPPTCPConnection_offline(String u,String p){
+        connection_off = MyXMPPTCPConnectionOffLine.getInstance();
+        connection_off.addConnectionListener(this);
+        if(!connection_off.isConnected()){
+            try {
+                connection_off.connect();
+                connection_off.login(u,p);
+            } catch (SmackException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (XMPPException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
-
+    private void initXMPPTCPConnection_online(){
+        connection_on = MyXMPPTCPConnectionOnLine.getInstance();
+        connection_on.addConnectionListener(this);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -155,8 +176,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> ,
                 attemptSignUp();
             }
         });
-
-        initXMPPTCPConnection();
+        initXMPPTCPConnection_online();
         //按照时间切换背景
         if (hour>=5&&hour<=12) {
             imageView.setImageResource(R.drawable.good_morning_img);
@@ -289,35 +309,69 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> ,
         }
     }
 
+
+    //初始化数据库
+    private static DaoSession daoSession;//配置数据库
+    private void initGreenDao() {
+        DaoMaster.DevOpenHelper helper = new DaoMaster.DevOpenHelper(LoginActivity.this, "aserbao.db");
+        SQLiteDatabase db = helper.getWritableDatabase();
+        DaoMaster daoMaster = new DaoMaster(db);
+        daoSession = daoMaster.newSession();
+    }
+
     private class loginTask extends AsyncTask<List<String>, Object, Short>{
 
-        //此次连接登录服务器为在线
+        //此次连接登录服务器先离线，后在线
         @Override
         protected Short doInBackground(List<String>... params) {
-            if(connection != null){
-                try{
-                    //如果没有连接openfire服务器，则连接；若已连接openfire服务器则跳过。
-                    connection.disconnect();
-                    connection.connect();//先退出再登录，防止重复登录
-                    if(TextUtils.isEmpty(params[0].get(0))){
-                        return 0;
-                    }else if(TextUtils.isEmpty(params[0].get(1))){
-                        return 1;
-                    }else{
-                        if(isLogin){
-                            connection.disconnect();
-                            connection.connect();
-                            connection.login(params[0].get(0), params[0].get(1));
-                            return 2;
-                        }else{
-                            if(connection.isConnected()){
-                                connection.login(params[0].get(0), params[0].get(1));
-                                Log.i("++++++++"+params[0].get(0), params[0].get(1));
-                                return 2;
-                            }
-                        }
-                    }
-                }catch (Exception e){
+
+
+            if(TextUtils.isEmpty(params[0].get(0))){
+                return 0;
+            }else if(TextUtils.isEmpty(params[0].get(1))){
+                return 1;
+            }
+            //从数据库读取最新的聊天记录到本地数据库，本应用中用json格式当做消息体
+            initGreenDao();
+            //先处理离线消息
+            //MyXMPPTCPConnectionOffLine.setUsername(JID.escapeNode("admin"));
+            //MyXMPPTCPConnectionOffLine.setPassword("8859844007");
+            //Log.i("34865289436785267",MyXMPPTCPConnectionOffLine.getUsername()+MyXMPPTCPConnectionOffLine.getPassword());
+            initXMPPTCPConnection_offline(params[0].get(0),params[0].get(1));
+            OfflineMessageManager offlineMessageManager=new OfflineMessageManager(connection_off);
+            List<org.jivesoftware.smack.packet.Message> messages= null;
+            try {
+                messages =  offlineMessageManager.getMessages();
+                Log.i("离线聊天数量:",messages.size()+"");
+                for(int i=0;i<messages.size();i++)
+                {
+                    //将所有接收到的消息，加入到数据库
+                    ChatMessage chat_msg =new ChatMessage(null,messages.get(i).getBody());
+                    daoSession.insert(chat_msg);
+                    Log.i("offline数据库加入++++++",messages.get(i).getBody());
+                }
+            } catch (SmackException.NoResponseException e) {
+                e.printStackTrace();
+            } catch (XMPPException.XMPPErrorException e) {
+                e.printStackTrace();
+            } catch (SmackException.NotConnectedException e) {
+                e.printStackTrace();
+            }
+
+            //结束离线状态，进入在线状态
+            try {
+                if(connection_off.isConnected())
+                {
+                    connection_off.disconnect();
+                    connection_off.instantShutdown();
+                }
+                if(!connection_on.isConnected())
+                {
+                    connection_on.connect();
+                }
+                connection_on.login(params[0].get(0),params[0].get(1));
+                return 2;
+            }catch (Exception e){
                     e.printStackTrace();
                     if(getException(e).contains("Client is already logged in")){
                         Looper.prepare();
@@ -327,9 +381,6 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> ,
                     }
                     return 3;
                 }
-            }
-            Log.i("+++++++++++++"+params[0].get(0), params[0].get(1));
-            return 3;
         }
 
         @Override
@@ -342,7 +393,6 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> ,
                     Toast.makeText(getApplicationContext(), "请输入密码", Toast.LENGTH_SHORT).show();
                     break;
                 case 2:
-                    isLogin = false;
                     //activity跳转到下一层
                     Toast.makeText(getApplicationContext(), "登录成功", Toast.LENGTH_SHORT).show();
                     new getnameTask().execute(loginList);
@@ -565,7 +615,8 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> ,
             else
             {
                 //如果再次按后退的时间小于规定时间，则退出,且退出登录
-                connection.disconnect();
+                connection_off.disconnect();
+                connection_on.disconnect();
                 finish();
             }
             //消费事件
