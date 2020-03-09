@@ -3,14 +3,18 @@ package com.example.im_chat.media.holder;
 import android.content.Context;
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.widget.Toast;
 import com.example.im_chat.R;
+import com.example.im_chat.activity.MainActivity;
 import com.example.im_chat.db.DaoMaster;
 import com.example.im_chat.db.DaoSession;
 import com.example.im_chat.entity.ChatMessage;
+import com.example.im_chat.entity.Friend;
+import com.example.im_chat.entity.MyInfo;
 import com.example.im_chat.helper.MessageTranslateBack;
 import com.example.im_chat.helper.MessageTranslateTo;
 import com.example.im_chat.media.DemoMessagesActivity;
@@ -23,6 +27,9 @@ import com.example.im_chat.media.holder.holders.messages.CustomOutcomingImageMes
 import com.example.im_chat.media.holder.holders.messages.CustomOutcomingTextMessageViewHolder;
 import com.example.im_chat.other.JID;
 import com.example.im_chat.utils.AppUtils;
+import com.example.im_chat.utils.ChinesePinyinUtil;
+import com.example.im_chat.utils.JDBCUtils;
+import com.example.im_chat.utils.JDBCUtils1;
 import com.example.im_chat.utils.MyXMPPTCPConnectionOnLine;
 import com.stfalcon.chatkit.messages.MessageHolders;
 import com.stfalcon.chatkit.messages.MessageInput;
@@ -30,13 +37,24 @@ import com.stfalcon.chatkit.messages.MessagesList;
 import com.stfalcon.chatkit.messages.MessagesListAdapter;
 
 import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.chat.Chat;
 import org.jivesoftware.smack.chat.ChatManager;
 import org.jivesoftware.smack.chat.ChatManagerListener;
 import org.jivesoftware.smack.chat.ChatMessageListener;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import me.yokeyword.eventbusactivityscope.EventBusActivityScope;
 
 
 /**
@@ -54,12 +72,39 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
     private MyXMPPTCPConnectionOnLine connection;//连接
     private ChatManager chatManager;//会话管理
     private Chat chat;//会话
+    private Chat chat1;//对自己的会话
     private static DaoSession daoSession;
 
     private String user_name;
     private static String user_id;
     private String friend_name;
     private String friend_id;
+    private List<String> inputList = new ArrayList<String>();
+    private String uTitles;
+    private String uTitles_name;
+    private String latestJson;
+
+    @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
+    public void onEvent(MyInfo data) {
+        //接收用户jid
+        uTitles=data.getUserId();
+        uTitles_name=data.getUserName();
+        latestJson=data.getLatestJson();
+        Log.i("接收到----",latestJson);
+        MessageTranslateBack helper=new MessageTranslateBack(latestJson);
+        User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),avatars.get(0),true);
+        //ChatMessage chatMessage = new ChatMessage((String) msg.obj, 1);
+        Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper.getMsgDate());
+        //messageList.add(chatMessage);
+        if((helper.getMsgFromId()).equals(friend_id)&&(helper.getMsgTo()).equals(user_id))
+        {
+            messagesAdapter.addToStart(message,true);//加入下方列表
+            //System.identityHashCode(messagesList);
+            messagesAdapter.notifyDataSetChanged();
+            Log.i("1发送11111111111111111",message.getText());
+        }
+
+    }
 
     static ArrayList<String> avatars = new ArrayList<String>() {
         {
@@ -68,29 +113,11 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
     };
     //接受处理消息
     private static Handler handler = new Handler(){
-
         @Override
         public void handleMessage(android.os.Message msg) {
             switch (msg.what){
                 case 0:
-                    MessageTranslateBack helper=new MessageTranslateBack((String) msg.obj);
-                    User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),avatars.get(0),true);
-                    //ChatMessage chatMessage = new ChatMessage((String) msg.obj, 1);
-                    Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper.getMsgDate());
-                    //messageList.add(chatMessage);
-                    if((helper.getMsgFromId()).equals(user_id))
-                    {
-                        //啥也不干
-                    }else{
-                        messagesAdapter.addToStart(message,true);//加入下方列表
-                        //System.identityHashCode(messagesList);
-                        messagesAdapter.notifyDataSetChanged();
-                        Log.i("1发送11111111111111111",message.getText());
-                    }
-                    //将所有接收到的消息，加入到数据库
-                    ChatMessage chat_msg =new ChatMessage(null,(String) msg.obj);
-                    daoSession.insert(chat_msg);
-                    Log.i("数据库加入++++++",(String) msg.obj);
+
                     break;
                 default:
                     break;
@@ -117,6 +144,8 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EventBusActivityScope.getDefault(this).register(this);
+        EventBus.getDefault().register(this);
         Bundle bundle = this.getIntent().getExtras();
         //从登陆activity的bundle中获取用户名
         user_name = bundle.getString("name");
@@ -139,6 +168,90 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
         input.setInputListener(this);
         input.setAttachmentsListener(this);
 
+        //实时刷新列表
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                boolean flg = false;
+                while(!flg){
+                    try {
+                        //inputList.add(super.)
+                        //new refreshTask().execute();
+                        Thread.sleep(3000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }) .start();
+
+    }
+
+    private class refreshTask extends AsyncTask<List<String>, Object, Short> {
+        private List new_msgs = new ArrayList<Message>();
+        private List input_msgs = new ArrayList<Message>();
+        private List msgs;
+        private ChatMessage msg;
+        private String lastLoadedDate;
+        @Override
+        protected Short doInBackground(List<String>... params) {
+            lastLoadedDate=params[0].get(0);
+            msgs= queryListByMessage();
+            int size = msgs.size();
+            //将数据库中最新的100条加入
+            for (int j = size-1; j >=0; j--) {
+                //Log.i("本地数据库大小",":"+size);
+                msg= (ChatMessage) msgs.get(j);
+                MessageTranslateBack helper=new MessageTranslateBack((String) msg.getMsg());
+                if(new_msgs.size()==100) break;
+                //好友发送的消息
+                if(JID.unescapeNode(helper.getMsgTo()).equals(JID.unescapeNode(accept_id))
+                        &&JID.unescapeNode(helper.getMsgFromId()).equals(JID.unescapeNode(send_id))
+                        &&msg!=null){
+                    Log.i("本地数据库1",":"+JID.unescapeNode(helper.getMsgTo())+"__1___"+JID.unescapeNode(accept_id));
+                    Log.i("本地数据库2",":"+JID.unescapeNode(helper.getMsgFromId())+"___2__"+JID.unescapeNode(send_id));
+                    User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),avatars.get(0),true);
+                    Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper.getMsgDate());
+                    new_msgs.add(message);//从最新一条开始添加
+                }
+                //我发送的消息
+                if(JID.unescapeNode(helper.getMsgTo()).equals(JID.unescapeNode(send_id))
+                        &&JID.unescapeNode(helper.getMsgFromId()).equals(JID.unescapeNode(accept_id))
+                        &&msg!=null){
+                    Log.i("本地数据库1",":"+JID.unescapeNode(helper.getMsgTo())+"__1___"+JID.unescapeNode(send_id));
+                    Log.i("本地数据库2",":"+JID.unescapeNode(helper.getMsgFromId())+"___2__"+JID.unescapeNode(accept_id));
+                    User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),avatars.get(0),true);
+                    Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper.getMsgDate());
+                    new_msgs.add(message);//从最新一条开始添加
+                }
+            }
+            //倒序
+            for(int j=new_msgs.size();j>0;j--)
+            {
+                if(new_msgs.get(j-1)!=null){
+                    input_msgs.add(new_msgs.get(j-1));
+                }
+                else {
+                    break;
+                }
+            }
+
+            return 1;
+        }
+
+        @Override
+        protected void onPostExecute(Short state) {
+            switch (state){
+                case 1:
+                    //messagesAdapter.addToEnd(input_msgs, true);
+                    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    String str=formatter.format(lastLoadedDate);
+                    Log.i("最后一条的时间",""+str);
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 
 
@@ -177,7 +290,6 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
             //第二个参数是 ChatMessageListener，我们这里传null就好了
             //群组共计x个成员，建立会话
             chat=chatManager.createChat(JID.escapeNode(friend_id)+"@123.56.163.211", null);
-
         }
     }
 
@@ -248,6 +360,7 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
         }
     }
 
+    //监听消息接收
     @Override
     public void chatCreated(Chat chat, boolean createdLocally) {
         chat.addMessageListener(this);
@@ -256,14 +369,14 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
     //接收到消息后的处理
     @Override
     public void processMessage(Chat chat, org.jivesoftware.smack.packet.Message message) {
-        if(message.getType().equals(org.jivesoftware.smack.packet.Message.Type.chat) || message.getType().equals(org.jivesoftware.smack.packet.Message.Type.normal)){
-            if(message.getBody() != null){
-                android.os.Message msg = android.os.Message.obtain();
-                msg.what = 0;
-                msg.obj = message.getBody();
-                handler.sendMessage(msg);
-            }
-        }
+        //if(message.getType().equals(org.jivesoftware.smack.packet.Message.Type.chat) || message.getType().equals(org.jivesoftware.smack.packet.Message.Type.normal)){
+            //if(message.getBody() != null){
+                //android.os.Message msg = android.os.Message.obtain();
+               // msg.what = 0;
+                //msg.obj = message.getBody();
+               // handler.sendMessage(msg);
+           // }
+       // }
     }
 
     @Override

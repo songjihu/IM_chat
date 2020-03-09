@@ -4,37 +4,42 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.app.Activity;
-import android.content.Intent;
-import android.database.sqlite.SQLiteDatabase;
-import android.os.Looper;
 import android.app.LoaderManager.LoaderCallbacks;
-
 import android.content.CursorLoader;
+import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.AsyncTask;
-
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Looper;
 import android.provider.ContactsContract;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.im_chat.R;
 import com.example.im_chat.db.DaoMaster;
 import com.example.im_chat.db.DaoSession;
 import com.example.im_chat.entity.ChatMessage;
 import com.example.im_chat.entity.UserInfo;
 import com.example.im_chat.other.JID;
+import com.example.im_chat.utils.JDBCUtils;
+import com.example.im_chat.utils.MyXMPPTCPConnectionOffLine;
+import com.example.im_chat.utils.MyXMPPTCPConnectionOnLine;
 
 import org.jivesoftware.smack.ConnectionListener;
 import org.jivesoftware.smack.SmackException;
@@ -54,27 +59,16 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.List;
-
-import static android.os.Build.TIME;
-
-import android.view.Window;
-import android.view.WindowManager;
-import android.widget.ImageView;
-
-import com.example.im_chat.R;
-import com.example.im_chat.utils.JDBCUtils;
-import com.example.im_chat.utils.MyXMPPTCPConnectionOffLine;
-import com.example.im_chat.utils.MyXMPPTCPConnectionOnLine;
-
-
-import java.util.Calendar;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static android.os.Build.TIME;
 
-public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> , ConnectionListener, RosterListener {
+
+public class TestLoginActivity extends Activity implements LoaderCallbacks<Cursor> , ConnectionListener, RosterListener {
     ImageView imageView;
     TextView textView;
     Calendar calendar = Calendar.getInstance();//获取时间，更替背景图片
@@ -292,7 +286,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> ,
                     Toast.makeText(getApplicationContext(), "获取成功", Toast.LENGTH_SHORT).show();
                     //用Bundle携带数据
                     //新建一个显式意图，第一个参数为当前Activity类对象，第二个参数为你要打开的Activity类
-                    Intent intent =new Intent(LoginActivity.this,MainActivity.class);
+                    Intent intent =new Intent(TestLoginActivity.this,MainActivity.class);
                     //用Bundle携带数据
                     Bundle bundle=new Bundle();
                     //传递name参数为name到下一层
@@ -315,7 +309,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> ,
     //初始化数据库
     private static DaoSession daoSession;//配置数据库
     private void initGreenDao() {
-        DaoMaster.DevOpenHelper helper = new DaoMaster.DevOpenHelper(LoginActivity.this, "aserbao.db");
+        DaoMaster.DevOpenHelper helper = new DaoMaster.DevOpenHelper(TestLoginActivity.this, "aserbao.db");
         SQLiteDatabase db = helper.getWritableDatabase();
         DaoMaster daoMaster = new DaoMaster(db);
         daoSession = daoMaster.newSession();
@@ -438,7 +432,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> ,
     //启用注册Activity
     private void attemptSignUp() {
         finish();
-        Intent intent =new Intent(LoginActivity.this,EmailtestActivity.class);
+        Intent intent =new Intent(TestLoginActivity.this,EmailtestActivity.class);
         startActivity(intent);
         overridePendingTransition(R.anim.in_from_left, R.anim.out_to_right);
     }
@@ -525,7 +519,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> ,
     private void addEmailsToAutoComplete(List<String> emailAddressCollection) {
         //Create adapter to tell the AutoCompleteTextView what to show in its dropdown list.
         ArrayAdapter<String> adapter =
-                new ArrayAdapter<>(LoginActivity.this,
+                new ArrayAdapter<>(TestLoginActivity.this,
                         android.R.layout.simple_dropdown_item_1line, emailAddressCollection);
 
         mEmailView.setAdapter(adapter);

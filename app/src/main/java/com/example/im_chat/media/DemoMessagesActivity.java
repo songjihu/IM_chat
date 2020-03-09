@@ -11,6 +11,7 @@ import android.view.MenuItem;
 import android.widget.ImageView;
 
 import com.example.im_chat.R;
+import com.example.im_chat.activity.MainActivity;
 import com.example.im_chat.db.DaoMaster;
 import com.example.im_chat.db.DaoSession;
 import com.example.im_chat.entity.ChatMessage;
@@ -41,7 +42,7 @@ import java.util.Locale;
 public abstract class DemoMessagesActivity extends AppCompatActivity
         implements MessagesListAdapter.SelectionListener,
         MessagesListAdapter.OnLoadMoreListener {
-
+    private SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     private static final int TOTAL_MESSAGES_COUNT = 100;
 
     protected final String senderId = "0";
@@ -50,7 +51,7 @@ public abstract class DemoMessagesActivity extends AppCompatActivity
 
     private Menu menu;
     private int selectionCount;
-    private Date lastLoadedDate;
+    private String lastLoadedDate;
     private List msgs;
     private ChatMessage msg;
     private List new_msgs = new ArrayList<Message>();
@@ -93,6 +94,7 @@ public abstract class DemoMessagesActivity extends AppCompatActivity
     @Override
     protected void onStart() {
         super.onStart();
+
         //messagesAdapter.addToStart(MessagesFixtures.getTextMessage(), true);
         //ChatUtil ru = new ChatUtil();
 
@@ -136,6 +138,14 @@ public abstract class DemoMessagesActivity extends AppCompatActivity
             }
         }
         messagesAdapter.addToEnd(input_msgs, true);
+        if(input_msgs.size()>0){
+            Message t=(Message) input_msgs.get(0);
+            lastLoadedDate=formatter.format(t.getCreatedAt());
+        }
+        else {
+            lastLoadedDate=formatter.format(new Date());
+        }
+
     }
 
     public List queryListByMessage(){
@@ -194,9 +204,9 @@ public abstract class DemoMessagesActivity extends AppCompatActivity
         new Handler().postDelayed(new Runnable() { //imitation of internet connection
             @Override
             public void run() {
-                ArrayList<Message> messages = MessagesFixtures.getMessages(lastLoadedDate);
-                lastLoadedDate = messages.get(messages.size() - 1).getCreatedAt();
-                messagesAdapter.addToEnd(messages, false);
+                //ArrayList<Message> messages = MessagesFixtures.getMessages(lastLoadedDate);
+                //lastLoadedDate = messages.get(messages.size() - 1).getCreatedAt();
+                //messagesAdapter.addToEnd(messages, false);
             }
         }, 1000);
     }

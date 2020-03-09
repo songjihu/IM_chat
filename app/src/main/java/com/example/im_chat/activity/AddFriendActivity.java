@@ -103,7 +103,7 @@ public class AddFriendActivity extends Activity implements ConnectionListener, R
 
 
 
-    private void initXMPPTCPConnection(String name,String password){
+    private void initXMPPTCPConnection(){
         connection = MyXMPPTCPConnectionOnLine.getInstance();
         connection.addConnectionListener(this);
         roster = Roster.getInstanceFor(connection);
@@ -133,39 +133,7 @@ public class AddFriendActivity extends Activity implements ConnectionListener, R
         mAdapter = new AddAdapter(AddFriendActivity.this,uTitles);//定义item的适配器
 
 
-        initXMPPTCPConnection(name,password);
-        roster.setSubscriptionMode(Roster.SubscriptionMode.manual);
-        //监听好友上下线模块
-        if(connection!=null&&connection.isConnected()&&connection.isAuthenticated()){
-            //条件过滤器
-            AndFilter filter = new AndFilter(new StanzaTypeFilter(Presence.class));
-            //packet监听器
-            StanzaListener packetListener = new StanzaListener() {
-                @Override
-                public void processPacket(Stanza packet) throws SmackException.NotConnectedException {
-                    if (packet instanceof Presence) {
-                        Presence presence = (Presence) packet;
-                        String fromId = presence.getFrom();
-                        String from = presence.getFrom().split("@")[1];//去掉了后缀
-                        if (presence.getType().equals(Presence.Type.subscribe)) {
-                            System.out.println("收到请求！请求添加好友" + from);
-                        } else if (presence.getType().equals(Presence.Type.subscribed)) {//对方同意订阅
-                            System.out.println("收到请求！同意订阅" + from);
-                        } else if (presence.getType().equals(Presence.Type.unsubscribe)) {//取消订阅
-                            System.out.println("收到请求！取消订阅" + from);
-                        } else if (presence.getType().equals(Presence.Type.unsubscribed)) {//拒绝订阅
-                            System.out.println("收到请求！拒绝订阅" + from);
-                        } else if (presence.getType().equals(Presence.Type.unavailable)) {//离线
-                            System.out.println("收到请求！离线" + from);
-                        } else if (presence.getType().equals(Presence.Type.available)) {//上线
-                            System.out.println("收到请求！上线" + from);
-                        }
-                    }
-                }
-            };
-            //添加监听
-            connection.addAsyncStanzaListener(packetListener, filter);
-        }
+
 
 
         //点击查询按钮，查询可以添加的好友

@@ -19,8 +19,17 @@ import android.widget.TextView;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
+import org.jivesoftware.smack.ConnectionListener;
+import org.jivesoftware.smack.SmackException;
+import org.jivesoftware.smack.StanzaListener;
+import org.jivesoftware.smack.XMPPConnection;
+import org.jivesoftware.smack.filter.AndFilter;
+import org.jivesoftware.smack.filter.StanzaTypeFilter;
+import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.roster.Roster;
 import org.jivesoftware.smack.roster.RosterEntry;
+import org.jivesoftware.smack.roster.RosterListener;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -28,6 +37,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.Collator;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Collections;
@@ -51,6 +61,7 @@ import com.example.im_chat.media.holder.CustomHolderMessagesActivity;
 import com.example.im_chat.other.JID;
 import com.example.im_chat.utils.ChinesePinyinUtil;
 import com.example.im_chat.utils.JDBCUtils;
+import com.example.im_chat.utils.JDBCUtils1;
 import com.example.im_chat.utils.MyXMPPTCPConnection;
 import com.example.im_chat.utils.MyXMPPTCPConnectionOnLine;
 
@@ -58,8 +69,8 @@ import me.yokeyword.eventbusactivityscope.EventBusActivityScope;
 import me.yokeyword.fragmentation.SupportFragment;
 
 
-public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefreshLayout.OnRefreshListener {
-    private Toolbar mToolbar;
+public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefreshLayout.OnRefreshListener, ConnectionListener, RosterListener {
+        private Toolbar mToolbar;
     private RecyclerView mRecy;
     private SwipeRefreshLayout mRefreshLayout;
     private TextView welcomeView;
@@ -76,6 +87,9 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
     private String uTitles_name = new String();
     private final static Comparator<Object> CHINA_COMPARE = Collator.getInstance(java.util.Locale.CHINA);//排序规则
     private List<String> inputList = new ArrayList<String>();
+    private List<String> inputList1 = new ArrayList<String>();
+    private Roster roster;
+    private MyXMPPTCPConnectionOnLine connection;
 
     //显示好友列表
 
@@ -121,10 +135,18 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
         //接收用户jid
         uTitles=data.getUserId();
         uTitles_name=data.getUserName();
+        friendsList=data.getFriendlist();
         Log.i("（）（）（）（）（）（）",uTitles);
     }
 
 
+    private void initXMPPTCPConnection(){
+        connection = MyXMPPTCPConnectionOnLine.getInstance();
+        connection.addConnectionListener(this);
+        roster = Roster.getInstanceFor(connection);
+        roster.addRosterListener(this);
+
+    }
 
     public void initView(View view) {
 
@@ -164,6 +186,7 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
                 bundle.putString("f_name",t.getName());
                 //Log.i("4523543254获取到的name值为",uuu.getUserName());
                 intent.putExtras(bundle);
+
                 startActivity(intent);
                 //CustomHolderDialogsActivity.open(getActivity());
 
@@ -227,6 +250,47 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
                 }
             }
         }) .start();
+        new refreshTask().execute(inputList);//刷新一次
+
+        initXMPPTCPConnection();
+        roster.setSubscriptionMode(Roster.SubscriptionMode.manual);
+        //监听好友上下线模块
+        if(connection!=null&&connection.isConnected()&&connection.isAuthenticated()){
+            //条件过滤器
+            AndFilter filter = new AndFilter(new StanzaTypeFilter(Presence.class));
+            //packet监听器
+            StanzaListener packetListener = new StanzaListener() {
+                @Override
+                public void processPacket(Stanza packet) throws SmackException.NotConnectedException {
+                    if (packet instanceof Presence) {
+                        Presence presence = (Presence) packet;
+                        String fromId = presence.getFrom();
+                        String from = presence.getFrom().split("@")[0];//去掉了后缀
+                        if (presence.getType().equals(Presence.Type.subscribe)) {
+                            System.out.println("收到请求！请求添加好友" + from);
+                        } else if (presence.getType().equals(Presence.Type.subscribed)) {//对方同意订阅
+                            System.out.println("收到请求！同意订阅" + from);
+                        } else if (presence.getType().equals(Presence.Type.unsubscribe)) {//取消订阅
+                            System.out.println("收到请求！取消订阅" + from);
+                        } else if (presence.getType().equals(Presence.Type.unsubscribed)) {//拒绝订阅
+                            System.out.println("收到请求！拒绝订阅" + from);
+                        } else if (presence.getType().equals(Presence.Type.unavailable)) {//用户离线
+                            System.out.println("收到请求！用户离线" + from+"---");
+                            inputList1.add(from);
+                            new setToOffline().execute(inputList1);
+                            //inputList1.clear();
+                        } else if (presence.getType().equals(Presence.Type.available)) {//上线
+                            System.out.println("收到请求！上线" + from+"---");
+                            inputList1.add(from);
+                            new setToOnline().execute(inputList1);
+                            //inputList1.clear();
+                        }
+                    }
+                }
+            };
+            //添加监听
+            connection.addAsyncStanzaListener(packetListener, filter);
+        }
 
     }
 
@@ -253,24 +317,46 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
             try {
                 Log.i("22342432","1");
                 Connection cn= JDBCUtils.getConnection();
+                Connection cn1= JDBCUtils1.getConnection();
                 String sql="SELECT * FROM `friendlist`WHERE fjid = '"+ JID.unescapeNode(params[0].get(0))+"'AND accepted ='1'";//
                 Statement st=(Statement)cn.createStatement();
+                Statement st1=(Statement)cn1.createStatement();
                 ResultSet rs=st.executeQuery(sql);
+                ResultSet rs1;
+                String userstatus;
                 while(rs.next()){
+                    String sql1="SELECT * FROM `userStatus`WHERE username LIKE '";//选取用户状态
+                    sql1=sql1+rs.getString("jid")+"'";
+                    sql1=sql1.split("@")[0]+"%"+sql1.split("@")[1]+"AND `online`=1";//避开转义字符问题
+                    Log.i("dhuewiohaiu:",sql1+"---");
+                    rs1=st1.executeQuery(sql1);
+                    userstatus="用户离线";
+                    while(rs1.next()){
+                        userstatus="在线";
+                    }
                     addItem.add(new Friend(
                             rs.getString("jid"),
                             rs.getString("send_name"),
                             "lastmsg",
-                            "[离线]"));
+                            "["+userstatus+"]"));
                 }
                 sql="SELECT * FROM `friendlist`WHERE jid = '"+ JID.unescapeNode(params[0].get(0))+"'AND accepted ='1'";//
                 rs=st.executeQuery(sql);
                 while(rs.next()){
+                    String sql1="SELECT * FROM `userStatus`WHERE username LIKE '";//选取用户状态
+                    sql1=sql1+rs.getString("fjid")+"'";
+                    Log.i("4637859276457",sql1);
+                    sql1=sql1.split("@")[0]+"%"+sql1.split("@")[1]+"AND `online`=1";//避开转义字符问题
+                    rs1=st1.executeQuery(sql1);
+                    userstatus="用户离线";
+                    while(rs1.next()){
+                        userstatus="在线";
+                    }
                     addItem.add(new Friend(
                             rs.getString("fjid"),
                             rs.getString("accept_name"),
                             "lastmsg",
-                            "[离线]"));
+                            "["+userstatus+"]"));
                 }
                 JDBCUtils.close(rs,st,cn);
 
@@ -295,6 +381,7 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
                         for(int j=0;j<mAdapter.getItemCount();j++){
                             //不在并且>=左<=右当前则插入前边
                             found=false;
+                            //如果不在则在适当位置插入
                             if(!isIn(addItem.get(i).getJid())){
                                 String t=mAdapter.getItem(j).getName();
                                 t= ChinesePinyinUtil.getPinYinFirstChar(t);//获取第一个字母
@@ -304,12 +391,17 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
                                     break;
                                 }
                             }
+                            //如果在则更新
+                            if(addItem.get(i).getJid().equals(mAdapter.getItem(j).getJid())&&!addItem.get(i).getOnline().equals(mAdapter.getItem(j).getOnline())){
+                                mAdapter.setData(j,addItem.get(i));
+                            }
+
                         }
                         if(!isIn(addItem.get(i).getJid())&&!found){
                             mAdapter.addData(addItem.get(i));
                         }
                     }
-                    Toast.makeText(getActivity(), "更新成功", Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(getActivity(), "更新成功", Toast.LENGTH_SHORT).show();
                     break;
                 default:
                     break;
@@ -328,6 +420,58 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
         return false;
     }
 
+    //改变状态
+    private class setToOffline extends AsyncTask<List<String>, Object, Short> {
+        private String Item;//被加入项
+        @Override
+        protected Short doInBackground(List<String>... params) {
+            Item=params[0].get(0);
+            return 1;
+        }
+
+        @Override
+        protected void onPostExecute(Short state) {
+            for(int i=0;i<mAdapter.getItemCount();i++)
+            {
+                String t1=JID.unescapeNode(Item);
+                String t2=mAdapter.getItem(i).getJid();
+                Log.i("fgbhdseiuwgogh","---"+t1.compareTo(t2)+"---");
+                if(t1.compareTo(t2)==0){
+                    Log.i("找到了","greyhtreyrtey");
+                    Friend tt= mAdapter.getItem(i);
+                    tt.setOnline("[用户离线]");
+                    mAdapter.setData(i,tt);
+                    inputList1.clear();
+                }
+            }
+        }
+    }
+
+    private class setToOnline extends AsyncTask<List<String>, Object, Short> {
+        private String Item;//被加入项
+        @Override
+        protected Short doInBackground(List<String>... params) {
+            Item=params[0].get(0);
+            return 1;
+        }
+
+        @Override
+        protected void onPostExecute(Short state) {
+            for(int i=0;i<mAdapter.getItemCount();i++)
+            {
+                String t1=JID.unescapeNode(Item);
+                String t2=mAdapter.getItem(i).getJid();
+                Log.i("fgbhdseiuwgogh","---"+t1.compareTo(t2)+"---");
+                if(t1.compareTo(t2)==0){
+                    Log.i("找到了","greyhtreyrtey");
+                    Friend tt= mAdapter.getItem(i);
+                    tt.setOnline("[在线]");
+                    mAdapter.setData(i,tt);
+                    inputList1.clear();
+                }
+            }
+        }
+    }
     private void scrollToTop() {
         mRecy.smoothScrollToPosition(0);
     }
@@ -354,6 +498,60 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
     }
 
 
+    @Override
+    public void connected(XMPPConnection connection) {
+
+    }
+
+    @Override
+    public void authenticated(XMPPConnection connection, boolean resumed) {
+
+    }
+
+    @Override
+    public void connectionClosed() {
+
+    }
+
+    @Override
+    public void connectionClosedOnError(Exception e) {
+
+    }
+
+    @Override
+    public void reconnectionSuccessful() {
+
+    }
+
+    @Override
+    public void reconnectingIn(int seconds) {
+
+    }
+
+    @Override
+    public void reconnectionFailed(Exception e) {
+
+    }
+
+    @Override
+    public void entriesAdded(Collection<String> addresses) {
+
+    }
+
+    @Override
+    public void entriesUpdated(Collection<String> addresses) {
+
+    }
+
+    @Override
+    public void entriesDeleted(Collection<String> addresses) {
+
+    }
+
+    @Override
+    public void presenceChanged(Presence presence) {
+
+    }
     @Override
     public void onDestroyView() {
         super.onDestroyView();

@@ -47,6 +47,9 @@
         <activity android:name=".media.holder.CustomHolderMessagesActivity"></activity>
         <activity android:name=".media.DemoDialogsActivity"></activity>
         <activity android:name=".media.DemoMessagesActivity"></activity>
+        <activity android:name=".activity.TestLoginActivity"
+            android:theme="@android:style/Theme.NoDisplay">
+        </activity>
     </application>
 
 </manifest>

@@ -9,7 +9,7 @@ import java.util.ArrayList;
 
 public class JDBCUtils1 {
 
-    private static final String connectionURL = "jdbc:mysql://123.56.163.211/im_chat?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true";//避免连接池失效
+    private static final String connectionURL = "jdbc:mysql://123.56.163.211/openfire?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true";//避免连接池失效
     private static final String username = "sjh";
     private static final String password = "8859844007";
 
@@ -17,7 +17,7 @@ public class JDBCUtils1 {
 
     //静态代码块：当整个程序执行的时候，优先加载静态代码块
     static {
-        for(int i =0;i<5;i++) {
+        for(int i =0;i<1;i++) {
             Connection con = createConnection();
             conList.add(con);
         }
@@ -47,11 +47,15 @@ public class JDBCUtils1 {
 
         return null;
     }
-//关闭时同时关闭3个内容
-  public static void close(ResultSet rs,Statement stmt,Connection con) {
+    //关闭时同时关闭3个内容
+    public static void close(ResultSet rs,Statement stmt,Connection con) {
         closeResultSet(rs);
         closeStatement(stmt);
         closeConnection(con);
+    }
+    public static void close(ResultSet rs,Statement stmt) {
+        closeResultSet(rs);
+        closeStatement(stmt);
     }
     public static void close(Statement stmt1,Statement stmt2,Connection con) {
         closeStatement(stmt1);
@@ -79,7 +83,7 @@ public class JDBCUtils1 {
     }
     private static void closeConnection(Connection con) {
         try {
-           if(con!=null)con.close();
+            if(con!=null)con.close();
         } catch (SQLException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

@@ -1,5 +1,8 @@
 package com.example.im_chat.entity;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class MyInfo {
     private static String userId;//用户id
     private static String userPwd;//用户密码
@@ -7,6 +10,26 @@ public class MyInfo {
     private static String userName;//用户名
     private static String isOnline;//是否在线
     private static String userType;//用户类别
+    private static List<Friend> friendlist =new ArrayList<>();//被加入项
+
+    public String getLatestJson() {
+        return latestJson;
+    }
+
+    public void setLatestJson(String latestJson) {
+        this.latestJson = latestJson;
+    }
+
+    private String latestJson;
+
+    public static List<Friend> getFriendlist() {
+        return friendlist;
+    }
+
+    public static void setFriendlist(List<Friend> friendlist) {
+        MyInfo.friendlist = friendlist;
+    }
+
 
     public String getUserType() {
         return userType;
