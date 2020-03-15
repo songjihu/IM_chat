@@ -24,7 +24,7 @@ public class FirstFragment extends BaseMainFragment {
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_first_home, container, false);
+        View view = inflater.inflate(R.layout.fragment_first, container, false);
         return view;
     }
 
@@ -34,7 +34,7 @@ public class FirstFragment extends BaseMainFragment {
 
         if (findChildFragment(FirstHomeFragmentChat.class) == null) {
             // ShopFragment是flow包里的
-            //loadRootFragment(R.id.fl_third_container, FirstHomeFragmentChat.newInstance());
+            loadRootFragment(R.id.fl_first_container, FirstHomeFragmentChat.newInstance());
         }
     }
 }

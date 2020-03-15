@@ -44,11 +44,14 @@ import com.stfalcon.chatkit.messages.MessagesListAdapter;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.greendao.query.QueryBuilder;
+import org.jivesoftware.smack.SmackException;
+import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.chat.Chat;
 import org.jivesoftware.smack.chat.ChatManager;
 import org.jivesoftware.smack.chat.ChatManagerListener;
 import org.jivesoftware.smack.chat.ChatMessageListener;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -147,7 +150,7 @@ public class MainActivity extends SupportActivity implements BaseMainFragment.On
 
         myInfo.setUserId(user_id);
         myInfo.setUserName(user_name);
-
+        myInfo.setSendId("id_name");
         EventBus.getDefault().postSticky(myInfo);
 
         SupportFragment firstFragment = findFragment(FirstFragment.class);
@@ -187,9 +190,12 @@ public class MainActivity extends SupportActivity implements BaseMainFragment.On
                 while(!flg){
                     try {
                         //serachFri(uTitles);
+                        if(!connection.isConnected()){
+                            connection.connect();
+                        }
                         new getFriendListTask().execute(inputList);
                         Thread.sleep(3000);
-                    } catch (InterruptedException e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
@@ -373,7 +379,10 @@ public class MainActivity extends SupportActivity implements BaseMainFragment.On
                     ChatMessage chat_msg =new ChatMessage(null,(String) msg.obj);
                     daoSession.insert(chat_msg);
                     Log.i("主界面数据库加入++++++",(String) msg.obj);
+                    myInfo.setUserId(user_id);
+                    myInfo.setUserName(user_name);
                     myInfo.setLatestJson((String) msg.obj);//加入最新消息
+                    myInfo.setSendId("add_msg");
                     EventBus.getDefault().postSticky(myInfo);
                     break;
                 default:

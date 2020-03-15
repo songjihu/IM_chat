@@ -97,12 +97,6 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
 
 
 
-    private String[] with_friends = new String[]{
-            "20162430722@gcsj-app",
-            "20162430723@gcsj-app"};
-    //群组其他人的idwith_friends
-
-
     public static SecondHomeFragmentChat newInstance() {
 
         Bundle args = new Bundle();
@@ -133,10 +127,11 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
     @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
     public void onEvent(MyInfo data) {
         //接收用户jid
+
         uTitles=data.getUserId();
         uTitles_name=data.getUserName();
-        friendsList=data.getFriendlist();
-        Log.i("（）（）（）（）（）（）",uTitles);
+        //friendsList=data.getFriendlist();
+        Log.i("shf:---",uTitles);
     }
 
 
@@ -375,6 +370,7 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
                     Toast.makeText(getActivity(), "更新失败", Toast.LENGTH_SHORT).show();
                     break;
                 case 1:
+                    //if(mAdapter.getItemCount()==0&&addItem.size()>0) mAdapter.addData(addItem.get(0));
                     if(mAdapter.getItemCount()==0) mAdapter.addData(addItem.get(0));
                     boolean found=false;
                     for(int i=0;i<addItem.size();i++){

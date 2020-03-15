@@ -78,6 +78,7 @@ public class FriendInvitationFragment extends SupportFragment {
         //接收用户jid
         uTitles=data.getUserId();
         uTitles_name=data.getUserName();
+        //friendsList=data.getFriendlist();
         Log.i("（）（）（）（）（）（）",uTitles);
     }
 

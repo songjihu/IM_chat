@@ -54,5 +54,6 @@ public class CustomHolderDialogsActivity extends DemoDialogsActivity {
         super.dialogsAdapter.setOnDialogLongClickListener(this);
         //将设置好的适配器配置给List
         dialogsList.setAdapter(super.dialogsAdapter);
+
     }
 }

@@ -12,6 +12,16 @@ public class MyInfo {
     private static String userType;//用户类别
     private static List<Friend> friendlist =new ArrayList<>();//被加入项
 
+    public String getSendId() {
+        return sendId;
+    }
+
+    public void setSendId(String sendId) {
+        MyInfo.sendId = sendId;
+    }
+
+    private static String sendId;//EventBusId
+
     public String getLatestJson() {
         return latestJson;
     }

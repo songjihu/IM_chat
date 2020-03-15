@@ -40,11 +40,13 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 import org.jivesoftware.smack.SmackException;
+import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.chat.Chat;
 import org.jivesoftware.smack.chat.ChatManager;
 import org.jivesoftware.smack.chat.ChatManagerListener;
 import org.jivesoftware.smack.chat.ChatMessageListener;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -103,7 +105,6 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
             messagesAdapter.notifyDataSetChanged();
             Log.i("1发送11111111111111111",message.getText());
         }
-
     }
 
     static ArrayList<String> avatars = new ArrayList<String>() {
@@ -348,6 +349,7 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
         if(chat!= null){
             try {
                 //发送消息，参数为发送的消息内容
+
                 chat.sendMessage(helper.getMsgJson());
                 Log.i("0发送",helper.getMsgJson());
                 //将所有接收到的消息，加入到数据库
