@@ -70,8 +70,15 @@ abstract class FixturesData {
     //按加号后刷新的照片地址
     static final ArrayList<String> images = new ArrayList<String>() {
         {
-            add("https://habrastorage.org/getpro/habr/post_images/e4b/067/b17/e4b067b17a3e414083f7420351db272b.jpg");
-            add("https://cdn.pixabay.com/photo/2017/12/25/17/48/waters-3038803_1280.jpg");
+            //add("https://habrastorage.org/getpro/habr/post_images/e4b/067/b17/e4b067b17a3e414083f7420351db272b.jpg");
+            //add("https://cdn.pixabay.com/photo/2017/12/25/17/48/waters-3038803_1280.jpg");
+            add("https://ss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=2316337112,901857741&fm=26&gp=0.jpg");
+            add("https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1584444782252&di=241c0f05789405cd8e01e1297ea6e43f&imgtype=jpg&src=http%3A%2F%2Fimg0.imgtn.bdimg.com%2Fit%2Fu%3D663150610%2C2399252282%26fm%3D214%26gp%3D0.jpg");
+            add("https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1584444711321&di=c1de0bd9627d6de44dc321de3a67624c&imgtype=0&src=http%3A%2F%2Fwww.aliyuncs.cn%2Fcontent%2Fuploadfile%2F201908%2Ff1e51566523770.jpg");
+            add("https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1584444711320&di=6ca034913954ebd5d9c88c7bba0315b1&imgtype=0&src=http%3A%2F%2Fimg.mp.itc.cn%2Fupload%2F20170508%2Ff2dc6b2be595434a838c3600de184741_th.jpg");
+            add("https://ss1.bdstatic.com/70cFvXSh_Q1YnxGkpoWK1HF6hhy/it/u=2028042787,2941183414&fm=26&gp=0.jpg");
+            add("https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1584444711319&di=d61b28aed4d6c6dc8df87e4807de4a8a&imgtype=0&src=http%3A%2F%2Fwww.seotest.cn%2Fd%2Ffile%2Fnews%2F20180209%2F201712016872_301.jpg");
+            add("https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1584444711318&di=d972360ec062b8255ba04b8ff9df14f8&imgtype=0&src=http%3A%2F%2Faliyunzixunbucket.oss-cn-beijing.aliyuncs.com%2Fjpg%2F519ec59ac06a92ba278dcb205a87df92.jpg%3Fx-oss-process%3Dimage%2Fresize%2Cp_100%2Fauto-orient%2C1%2Fquality%2Cq_90%2Fformat%2Cjpg%2Fwatermark%2Cimage_eXVuY2VzaGk%3D%2Ct_100");
         }
     };
 

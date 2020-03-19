@@ -4,8 +4,9 @@ import android.os.Parcelable;
 
 
 /**
- * Created by Administrator on 2017/7/14.
- * 2020/1/31 更改
+ *   好友实体
+ * @auther songjihu
+ * @since 2020/3/16 19:57
  */
 
 public class Friend implements Parcelable{

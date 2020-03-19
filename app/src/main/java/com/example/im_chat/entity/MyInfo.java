@@ -1,5 +1,7 @@
 package com.example.im_chat.entity;
 
+import com.example.im_chat.media.data.model.Dialog;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,6 +13,16 @@ public class MyInfo {
     private static String isOnline;//是否在线
     private static String userType;//用户类别
     private static List<Friend> friendlist =new ArrayList<>();//被加入项
+    private List<Dialog> unreadList;//未读消息列表
+
+    public List<Dialog> getUnreadList() {
+        return unreadList;
+    }
+
+    public void setUnreadList(List<Dialog> unreadList) {
+        this.unreadList = unreadList;
+    }
+
 
     public String getSendId() {
         return sendId;

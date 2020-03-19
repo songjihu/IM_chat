@@ -17,6 +17,7 @@
         app:outcomingTimeTextColor="@color/gray_dark_transparent"/>
 
     <View
+        android:id="@+id/holder_line"
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:layout_above="@+id/input"
@@ -39,5 +40,17 @@
         app:inputButtonDefaultIconDisabledColor="@color/white60"
         app:inputHint="@string/hint_enter_a_message"
         app:showAttachmentButton="true"/>
+
+    <LinearLayout
+        android:id="@+id/messages_bottom"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:layout_weight="3"
+        android:background="#00FFFF"
+        android:orientation="vertical"
+        android:layout_above="@+id/holder_line"
+        android:visibility="gone">
+
+    </LinearLayout>
 
 </RelativeLayout>

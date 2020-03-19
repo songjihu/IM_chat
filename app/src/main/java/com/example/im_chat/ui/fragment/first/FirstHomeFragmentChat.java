@@ -19,6 +19,7 @@ import com.example.im_chat.R;
 import com.example.im_chat.db.DaoSession;
 import com.example.im_chat.entity.ChatMessage;
 import com.example.im_chat.entity.Friend;
+import com.example.im_chat.entity.MyInfo;
 import com.example.im_chat.helper.MessageTranslateBack;
 import com.example.im_chat.media.data.fixtures.DialogsFixtures;
 import com.example.im_chat.media.data.model.Dialog;
@@ -27,6 +28,7 @@ import com.example.im_chat.media.data.model.User;
 import com.example.im_chat.media.holder.CustomHolderDialogsActivity;
 import com.example.im_chat.media.holder.CustomHolderMessagesActivity;
 import com.example.im_chat.media.holder.holders.dialogs.CustomDialogViewHolder;
+import com.example.im_chat.other.JID;
 import com.example.im_chat.utils.JDBCUtils;
 import com.example.im_chat.utils.MyXMPPTCPConnection;
 import com.example.im_chat.utils.MyXMPPTCPConnectionOnLine;
@@ -77,12 +79,16 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
     final String team_name[] = new String[20];//加入的讨论组name
     final String team_member[][] = new String[20][20];//加入的讨论组人员组成
     private String user_name;//用户名
+    private String uTitles_name = new String();
+    private List<Dialog> unreadList=new ArrayList<>();//未读消息列表
 
 
 
     private boolean mInAtTop = true;
     private int mScrollTotal;
     private String uTitles = new String();
+    private String latestJson;//最新好友消息
+
 
     //显示好友列表
 
@@ -116,10 +122,41 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
 
 
     @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
-    public void onEvent(String data) {
-        //接收用户姓名
-        uTitles=data;
-        //Log.i("（）（）（）（）（）（）",data);
+    public void onEvent(MyInfo data) {
+        //接收用户jid
+        uTitles=data.getUserId();
+        uTitles_name=data.getUserName();
+        //friendsList=data.getFriendlist();
+        Log.i("shf:---",uTitles);
+        //收到一条消息
+        if(data.getSendId().equals("add_msg")){
+            latestJson=data.getLatestJson();
+            MessageTranslateBack helper=new MessageTranslateBack(latestJson);
+            //获取一个好友
+            User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),avatars.get(0),true);
+            ArrayList<User> users = new ArrayList<>();
+            users.add(user);
+            //ChatMessage chatMessage = new ChatMessage((String) msg.obj, 1);
+            Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper.getMsgDate());
+            //messageList.add(chatMessage);
+            String FriendId=helper.getMsgFromId();
+            String FriendName=helper.getMsgFrom();
+            int unreadCount=0;
+            //如果存在，则移除
+            for(int i=0;i<unreadList.size();i++){
+                if(FriendId.equals(unreadList.get(i).getId())){
+                    unreadCount=unreadList.get(i).getUnreadCount();
+                    unreadList.remove(i);
+                    dialogsAdapter.deleteById(FriendId);
+                    break;
+                }
+            }
+            //加入顶部
+            Dialog t=new Dialog(FriendId,FriendName,avatars.get(0),users,message,unreadCount+1);
+            dialogsAdapter.addItem(0,t);
+            unreadList.add(0,t);
+        }
+
     }
 
     static ArrayList<String> avatars = new ArrayList<String>() {
@@ -137,7 +174,7 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
                 R.layout.item_custom_dialog_view_holder,
                 CustomDialogViewHolder.class,
                 imageLoader);
-        dialogsAdapter.setItems(DialogsFixtures.getDialogs());
+        //dialogsAdapter.setItems(DialogsFixtures.getDialogs());
         dialogsAdapter.setOnDialogClickListener(this);
         dialogsList.setAdapter(dialogsAdapter);
         Log.i("开启第一个Fragment","ohohohohohohohoh");
@@ -161,13 +198,18 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
 
     @Override
     public void onDialogClick(Dialog dialog) {
-        String temp = dialog.getId();
-        int t = Integer.parseInt(temp);
-        team_member[t][19]=uTitles;//存入自己是谁
-        team_member[t][18]=team_id[t];//存入群组id
-        team_member[t][17]=user_name;//存入自己叫啥
-        EventBus.getDefault().postSticky(team_member[t]);//发送小组成员
-        CustomHolderMessagesActivity.open(getActivity());
+        User t=(User) dialog.getUsers().get(0);
+        Log.i("点击了jid",t.getId()+"姓名"+t.getName());
+        Intent intent =new Intent(getActivity(), CustomHolderMessagesActivity.class);
+        //用Bundle携带数据
+        Bundle bundle=new Bundle();
+        bundle.putString("jid",uTitles);
+        bundle.putString("name",uTitles_name);
+        bundle.putString("f_jid",t.getId());
+        bundle.putString("f_name",t.getName());
+        //Log.i("4523543254获取到的name值为",uuu.getUserName());
+        intent.putExtras(bundle);
+        startActivity(intent);
 
     }
 

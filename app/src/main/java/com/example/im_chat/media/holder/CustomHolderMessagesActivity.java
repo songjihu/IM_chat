@@ -1,5 +1,7 @@
 package com.example.im_chat.media.holder;
 
+import android.app.FragmentManager;
+import android.app.FragmentTransaction;
 import android.content.Context;
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
@@ -7,6 +9,8 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 import com.example.im_chat.R;
 import com.example.im_chat.activity.MainActivity;
@@ -26,6 +30,8 @@ import com.example.im_chat.media.holder.holders.messages.CustomIncomingTextMessa
 import com.example.im_chat.media.holder.holders.messages.CustomOutcomingImageMessageViewHolder;
 import com.example.im_chat.media.holder.holders.messages.CustomOutcomingTextMessageViewHolder;
 import com.example.im_chat.other.JID;
+import com.example.im_chat.ui.fragment.WebFragment;
+import com.example.im_chat.ui.fragment.third.FriendInvitationFragment;
 import com.example.im_chat.utils.AppUtils;
 import com.example.im_chat.utils.ChinesePinyinUtil;
 import com.example.im_chat.utils.JDBCUtils;
@@ -85,6 +91,7 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
     private String uTitles;
     private String uTitles_name;
     private String latestJson;
+    private Boolean bottom_flag=false;
 
     @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
     public void onEvent(MyInfo data) {
@@ -92,19 +99,22 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
         uTitles=data.getUserId();
         uTitles_name=data.getUserName();
         latestJson=data.getLatestJson();
-        Log.i("接收到----",latestJson);
-        MessageTranslateBack helper=new MessageTranslateBack(latestJson);
-        User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),avatars.get(0),true);
-        //ChatMessage chatMessage = new ChatMessage((String) msg.obj, 1);
-        Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper.getMsgDate());
-        //messageList.add(chatMessage);
-        if((helper.getMsgFromId()).equals(friend_id)&&(helper.getMsgTo()).equals(user_id))
-        {
-            messagesAdapter.addToStart(message,true);//加入下方列表
-            //System.identityHashCode(messagesList);
-            messagesAdapter.notifyDataSetChanged();
-            Log.i("1发送11111111111111111",message.getText());
+        //Log.i("接收到----",latestJson);
+        if(data.getSendId().equals("add_msg")){
+            MessageTranslateBack helper=new MessageTranslateBack(latestJson);
+            User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),avatars.get(0),true);
+            //ChatMessage chatMessage = new ChatMessage((String) msg.obj, 1);
+            Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper.getMsgDate());
+            //messageList.add(chatMessage);
+            if((helper.getMsgFromId()).equals(friend_id)&&(helper.getMsgTo()).equals(user_id))
+            {
+                messagesAdapter.addToStart(message,true);//加入下方列表
+                //System.identityHashCode(messagesList);
+                messagesAdapter.notifyDataSetChanged();
+                Log.i("1发送11111111111111111",message.getText());
+            }
         }
+
     }
 
     static ArrayList<String> avatars = new ArrayList<String>() {
@@ -169,22 +179,14 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
         input.setInputListener(this);
         input.setAttachmentsListener(this);
 
-        //实时刷新列表
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                boolean flg = false;
-                while(!flg){
-                    try {
-                        //inputList.add(super.)
-                        //new refreshTask().execute();
-                        Thread.sleep(3000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }) .start();
+        //加载下方网页
+        FragmentManager fragmentManager =getFragmentManager();
+        FragmentTransaction transaction = fragmentManager.beginTransaction();
+        //步骤二：用add()方法加上Fragment的对象rightFragment
+        WebFragment rightFragment = new WebFragment();
+        transaction.add(R.id.messages_bottom,rightFragment);
+        //步骤三：调用commit()方法使得FragmentTransaction实例的改变生效
+        transaction.commit();
 
     }
 
@@ -268,7 +270,17 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
     //点击加号的事件，刷新出一个图片
     @Override
     public void onAddAttachments() {
-        messagesAdapter.addToStart(MessagesFixtures.getImageMessage(), true);
+        //messagesAdapter.addToStart(MessagesFixtures.getImageMessage(), true);
+        //步骤一：添加一个FragmentTransaction的实例
+        LinearLayout linearLayout=(LinearLayout)findViewById(R.id.messages_bottom);
+        if(bottom_flag==false){
+            linearLayout.setVisibility(View.VISIBLE);
+            bottom_flag=true;
+        }else {
+            linearLayout.setVisibility(View.GONE);
+            bottom_flag=false;
+        }
+        //start(FriendInvitationFragment.newInstance());
     }
 
     //消息长按事件
@@ -344,18 +356,24 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
         Log.i("2发送222222222222222",helper.getMsgJson());
         Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper1.getMsgDate());
         messagesAdapter.addToStart(message,true);//加入下方列表
-        Log.i("2发送222222222222222","222");
+
+
 
         if(chat!= null){
             try {
                 //发送消息，参数为发送的消息内容
-
                 chat.sendMessage(helper.getMsgJson());
                 Log.i("0发送",helper.getMsgJson());
                 //将所有接收到的消息，加入到数据库
                 ChatMessage chat_msg =new ChatMessage(null,(String) helper.getMsgJson());
                 daoSession.insert(chat_msg);
                 Log.i("数据库加入++++++",(String) helper.getMsgJson());
+                MyInfo myInfo=new MyInfo();
+                myInfo.setUserId(JID.escapeNode(user_id));
+                myInfo.setUserName(user_name);
+                myInfo.setLatestJson(helper.getMsgJson());//加入最新消息
+                myInfo.setSendId("add_msg_self:"+friend_name);
+                EventBus.getDefault().postSticky(myInfo);
             } catch (SmackException.NotConnectedException e) {
                 e.printStackTrace();
             }
