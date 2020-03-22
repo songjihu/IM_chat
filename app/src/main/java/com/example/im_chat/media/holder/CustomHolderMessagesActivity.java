@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 import com.example.im_chat.R;
@@ -19,6 +20,7 @@ import com.example.im_chat.db.DaoSession;
 import com.example.im_chat.entity.ChatMessage;
 import com.example.im_chat.entity.Friend;
 import com.example.im_chat.entity.MyInfo;
+import com.example.im_chat.entity.SendInfo;
 import com.example.im_chat.helper.MessageTranslateBack;
 import com.example.im_chat.helper.MessageTranslateTo;
 import com.example.im_chat.media.DemoMessagesActivity;
@@ -96,6 +98,7 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
     @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
     public void onEvent(MyInfo data) {
         //接收用户jid
+        Log.i("我也","接收到了");
         uTitles=data.getUserId();
         uTitles_name=data.getUserName();
         latestJson=data.getLatestJson();
@@ -114,6 +117,19 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
                 Log.i("1发送11111111111111111",message.getText());
             }
         }
+
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
+    public void onEvent(SendInfo data) {
+        //接收消息
+        Log.i("我也","接收到了！！！");
+        String fromId= data.getUserId();
+        String fromName=data.getUserName();
+        String toId= data.getUserId();
+        String toName=data.getUserName();
+        String msg=data.getMsg();
+        sendChatMessage(msg,"img");
 
     }
 
@@ -182,11 +198,20 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
         //加载下方网页
         FragmentManager fragmentManager =getFragmentManager();
         FragmentTransaction transaction = fragmentManager.beginTransaction();
+
         //步骤二：用add()方法加上Fragment的对象rightFragment
+        //Bundle bundle = new Bundle();
+        bundle.putString("fromId", user_id);
+        bundle.putString("fromName", user_name);
+        bundle.putString("toId", friend_id);
+        bundle.putString("toName", friend_name);
         WebFragment rightFragment = new WebFragment();
+        rightFragment.setArguments(bundle);
         transaction.add(R.id.messages_bottom,rightFragment);
         //步骤三：调用commit()方法使得FragmentTransaction实例的改变生效
         transaction.commit();
+
+
 
     }
 
@@ -262,7 +287,7 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
     @Override
     public boolean onSubmit(CharSequence input) {
         //messagesAdapter.addToStart(MessagesFixtures.getTextMessage(), true);
-        sendChatMessage(input.toString());
+        sendChatMessage(input.toString(),"text");
         return true;
     }
 
@@ -274,9 +299,27 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
         //步骤一：添加一个FragmentTransaction的实例
         LinearLayout linearLayout=(LinearLayout)findViewById(R.id.messages_bottom);
         if(bottom_flag==false){
+            if(false){
+                messagesList.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+                int popupWidth = messagesList.getMeasuredWidth();    //  获取测量后的宽度
+                int popupHeight = messagesList.getMeasuredHeight();  //获取测量后的高度
+                ViewGroup.LayoutParams lp;
+                lp=messagesList.getLayoutParams();
+                lp.height=popupHeight-200;
+                messagesList.setLayoutParams(lp);
+            }
             linearLayout.setVisibility(View.VISIBLE);
             bottom_flag=true;
         }else {
+            if(false){
+                messagesList.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+                int popupWidth = messagesList.getMeasuredWidth();    //  获取测量后的宽度
+                int popupHeight = messagesList.getMeasuredHeight();  //获取测量后的高度
+                ViewGroup.LayoutParams lp;
+                lp=messagesList.getLayoutParams();
+                lp.height=popupHeight+200;
+                messagesList.setLayoutParams(lp);
+            }
             linearLayout.setVisibility(View.GONE);
             bottom_flag=false;
         }
@@ -349,16 +392,18 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
     }
 
     //发消息
-    private void sendChatMessage(String msgContent){
+    private void sendChatMessage(String msgContent,String type){
         MessageTranslateTo helper=new MessageTranslateTo(user_name,user_id,friend_id,msgContent);
         User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),avatars.get(0),true);
         MessageTranslateBack helper1=new MessageTranslateBack(helper.getMsgJson());
         Log.i("2发送222222222222222",helper.getMsgJson());
         Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper1.getMsgDate());
-        messagesAdapter.addToStart(message,true);//加入下方列表
-
-
-
+        if(type.equals("img")){
+            message.setImage(new Message.Image(msgContent));
+            messagesAdapter.addToStart(message,true);//加入下方列表图片
+        }else {
+            messagesAdapter.addToStart(message,true);//加入下方列表
+        }
         if(chat!= null){
             try {
                 //发送消息，参数为发送的消息内容

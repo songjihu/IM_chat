@@ -2,6 +2,7 @@ package com.example.im_chat.ui.fragment;
 import android.annotation.TargetApi;
 import android.app.Fragment;
 import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
@@ -12,15 +13,21 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import com.example.im_chat.R;
+import com.example.im_chat.entity.MyInfo;
+import com.example.im_chat.entity.SendInfo;
 import com.example.im_chat.media.holder.CustomHolderMessagesActivity;
+
+import org.greenrobot.eventbus.EventBus;
 
 public class WebFragment extends Fragment {
 
@@ -29,11 +36,22 @@ public class WebFragment extends Fragment {
     public ValueCallback<Uri[]> uploadMessage;
     public static final int REQUEST_SELECT_FILE = 100;
     private final static int FILECHOOSER_RESULTCODE = 2;
+    private String user_name;
+    private String user_id;
+    private String friend_name;
+    private String friend_id;
+    private String url="http://123.56.163.211:8080/";
+    private String fileCatalog="temp-rainy/";//服务器目录
 
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Bundle bundle = this.getArguments();
+        user_name= bundle.getString("fromName");
+        user_id= bundle.getString("fromId");
+        friend_name= bundle.getString("toName");
+        friend_id= bundle.getString("toId");
     }
 
     @Override
@@ -60,9 +78,8 @@ public class WebFragment extends Fragment {
         webSettings.setBlockNetworkImage(false);
         webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
         webSettings.setLoadsImagesAutomatically(true);
-        //webView.loadUrl("http://www.qq.com//");
-        //webView.loadUrl("http://123.56.163.211:8080/index.jsp");
-        webView.loadUrl("http://123.56.163.211:8080/sendimage");
+
+        webView.loadUrl(url+"file");
 
         webView.setWebChromeClient(new WebChromeClient(){
 
@@ -122,8 +139,51 @@ public class WebFragment extends Fragment {
             }
 
         });
+
+        //在js中调用本地java方法
+        webView.addJavascriptInterface(new JsInterface(getActivity()), "AndroidWebView");
+
     }
 
+    private class JsInterface {
+        private Context mContext;
+        public JsInterface(Context context) {
+            this.mContext = context;
+        }
+
+        //在js中调用window.AndroidWebView.showInfoFromJs(name)，便会触发此方法。
+        @JavascriptInterface
+        public void showInfoFromJs(final String name) {
+            //确定文件可用后得到返回值
+            //Toast.makeText(mContext, name, Toast.LENGTH_SHORT).show();
+            webView.post(new Runnable(){
+                @Override
+                public void run(){
+                    //String str = "dfjkgnosudf b";
+                    //webView.loadUrl("javascript:showInfoFromJava('" +str+ "')");
+                    String msg = user_id+":"+user_name+":"+friend_id+":"+friend_name+":"+name;//组合为一条发送
+                    //调用js中的函数：showInfoFromJava(msg)
+                    webView.loadUrl("javascript:showInfoFromJava('" + msg + "')");
+                }
+            });
+            //TODO:发送给对方一个图片的guid让对方显示图片
+            SendInfo sendInfo=new SendInfo();
+            sendInfo.setUserId(user_id);
+            sendInfo.setUserName(user_name);
+            sendInfo.setFriendId(friend_id);
+            sendInfo.setFriendName(friend_name);
+            sendInfo.setMsg(url+fileCatalog+name);//发送图片位置
+            EventBus.getDefault().postSticky(sendInfo);
+
+        }
+    }
+
+    //在java中调用js代码
+    public void sendInfoToJs(View view) {
+        String msg = user_id+":"+user_name+":"+friend_id+":"+friend_name;//组合为一条发送
+        //调用js中的函数：showInfoFromJava(msg)
+        webView.loadUrl("javascript:showInfoFromJava('" + msg + "')");
+    }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent intent)
