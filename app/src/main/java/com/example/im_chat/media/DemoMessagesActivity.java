@@ -114,6 +114,9 @@ public abstract class DemoMessagesActivity extends AppCompatActivity
                 Log.i("本地数据库2",":"+JID.unescapeNode(helper.getMsgFromId())+"___2__"+JID.unescapeNode(send_id));
                 User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),avatars.get(0),true);
                 Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper.getMsgDate());
+                if(helper.getMsgType()!=null&&helper.getMsgType().equals("img")){
+                    message.setImage(new Message.Image(helper.getMsgContent()));
+                }
                 new_msgs.add(message);//从最新一条开始添加
             }
             //我发送的消息
@@ -124,6 +127,9 @@ public abstract class DemoMessagesActivity extends AppCompatActivity
                 Log.i("本地数据库2",":"+JID.unescapeNode(helper.getMsgFromId())+"___2__"+JID.unescapeNode(accept_id));
                 User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),avatars.get(0),true);
                 Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper.getMsgDate());
+                if(helper.getMsgType()!=null&&helper.getMsgType().equals("img")){
+                    message.setImage(new Message.Image(helper.getMsgContent()));
+                }
                 new_msgs.add(message);//从最新一条开始添加
             }
         }

@@ -111,6 +111,9 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
             //messageList.add(chatMessage);
             if((helper.getMsgFromId()).equals(friend_id)&&(helper.getMsgTo()).equals(user_id))
             {
+                if(helper.getMsgType()!=null&&helper.getMsgType().equals("img")){
+                    message.setImage(new Message.Image(helper.getMsgContent()));
+                }
                 messagesAdapter.addToStart(message,true);//加入下方列表
                 //System.identityHashCode(messagesList);
                 messagesAdapter.notifyDataSetChanged();
@@ -393,17 +396,15 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
 
     //发消息
     private void sendChatMessage(String msgContent,String type){
-        MessageTranslateTo helper=new MessageTranslateTo(user_name,user_id,friend_id,msgContent);
+        MessageTranslateTo helper=new MessageTranslateTo(user_name,user_id,friend_id,msgContent,type);
         User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),avatars.get(0),true);
         MessageTranslateBack helper1=new MessageTranslateBack(helper.getMsgJson());
         Log.i("2发送222222222222222",helper.getMsgJson());
         Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper1.getMsgDate());
-        if(type.equals("img")){
+        if(type.equals("img")) {
             message.setImage(new Message.Image(msgContent));
-            messagesAdapter.addToStart(message,true);//加入下方列表图片
-        }else {
-            messagesAdapter.addToStart(message,true);//加入下方列表
         }
+        messagesAdapter.addToStart(message,true);//加入下方列表
         if(chat!= null){
             try {
                 //发送消息，参数为发送的消息内容

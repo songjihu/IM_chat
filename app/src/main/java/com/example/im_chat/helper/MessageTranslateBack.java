@@ -19,6 +19,7 @@ public class MessageTranslateBack {
     private String msgTo;//消息接收群组id
     private Date msgDate;//消息发送时间
     private String msgContent;//消息内容
+    private String msgType;//消息类型
 
 
 
@@ -40,12 +41,21 @@ public class MessageTranslateBack {
                 this.msgTo = obj.getString("msgTo");
                 this.msgDate = formatter.parse(dateString, pos);
                 this.msgContent = obj.getString("msgContent");
+                this.msgType=obj.getString("msgType");
             } catch (JSONException e) {
                 e.printStackTrace();
             }
 
         }
 
+    }
+
+    public String getMsgType() {
+        return msgType;
+    }
+
+    public void setMsgType(String msgType) {
+        this.msgType = msgType;
     }
 
     public Date getMsgDate() {

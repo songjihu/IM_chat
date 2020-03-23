@@ -15,11 +15,11 @@ public class MessageTranslateTo {
     private String msgDate;//消息发送时间
     private String msgContent;//消息内容
     private String msgJson;//转换结果
+    private String msgType;//消息类型
 
 
 
-
-    public MessageTranslateTo(String msgFrom, String msgFromId, String msgTo, String msgContent){
+    public MessageTranslateTo(String msgFrom, String msgFromId, String msgTo, String msgContent,String msgType){
         /*Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.DAY_OF_MONTH,0);
         calendar.add(Calendar.MINUTE, 0);*/
@@ -31,10 +31,12 @@ public class MessageTranslateTo {
         this.msgTo = msgTo;
         this.msgDate = formatter.format(currentTime);
         this.msgContent = msgContent;
+        this.msgType=msgType;
         this.msgJson = "{\"msgFrom\":\""+this.msgFrom+"\"," +
                         "\"msgFromId\":\""+this.msgFromId+"\"," +
                         "\"msgTo\":\""+this.msgTo+"\"," +
                         "\"msgDate\":\""+this.msgDate+"\"," +
+                        "\"msgType\":\""+this.msgType+"\"," +
                         "\"msgContent\":\""+this.msgContent+"\"}";
 
     }
@@ -86,5 +88,14 @@ public class MessageTranslateTo {
     public String getMsgJson() {
         return msgJson;
     }
+
+    public String getMsgType() {
+        return msgType;
+    }
+
+    public void setMsgType(String msgType) {
+        this.msgType = msgType;
+    }
+
 
 }

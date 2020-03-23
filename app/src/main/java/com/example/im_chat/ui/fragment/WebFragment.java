@@ -40,7 +40,8 @@ public class WebFragment extends Fragment {
     private String user_id;
     private String friend_name;
     private String friend_id;
-    private String url="http://123.56.163.211:8080/";
+    //private String url="http://123.56.163.211:8080/";
+    private String url="http://192.168.1.109:8080/";
     private String fileCatalog="temp-rainy/";//服务器目录
 
 

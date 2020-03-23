@@ -139,6 +139,9 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
             //ChatMessage chatMessage = new ChatMessage((String) msg.obj, 1);
             Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper.getMsgDate());
             //messageList.add(chatMessage);
+            if(helper.getMsgType()!=null&&helper.getMsgType().equals("img")){
+                message.setImage(new Message.Image(helper.getMsgContent()));
+            }
             String FriendId=helper.getMsgFromId();
             String FriendName=helper.getMsgFrom();
             int unreadCount=0;
