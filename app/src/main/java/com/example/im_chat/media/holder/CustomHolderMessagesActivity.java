@@ -5,6 +5,9 @@ import android.app.FragmentTransaction;
 import android.content.Context;
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -31,6 +34,8 @@ import com.example.im_chat.media.holder.holders.messages.CustomIncomingImageMess
 import com.example.im_chat.media.holder.holders.messages.CustomIncomingTextMessageViewHolder;
 import com.example.im_chat.media.holder.holders.messages.CustomOutcomingImageMessageViewHolder;
 import com.example.im_chat.media.holder.holders.messages.CustomOutcomingTextMessageViewHolder;
+import com.example.im_chat.media.holder.holders.messages.IncomingVoiceMessageViewHolder;
+import com.example.im_chat.media.holder.holders.messages.OutcomingVoiceMessageViewHolder;
 import com.example.im_chat.other.JID;
 import com.example.im_chat.ui.fragment.WebFragment;
 import com.example.im_chat.ui.fragment.third.FriendInvitationFragment;
@@ -39,6 +44,7 @@ import com.example.im_chat.utils.ChinesePinyinUtil;
 import com.example.im_chat.utils.JDBCUtils;
 import com.example.im_chat.utils.JDBCUtils1;
 import com.example.im_chat.utils.MyXMPPTCPConnectionOnLine;
+import com.stfalcon.chatkit.commons.models.IMessage;
 import com.stfalcon.chatkit.messages.MessageHolders;
 import com.stfalcon.chatkit.messages.MessageInput;
 import com.stfalcon.chatkit.messages.MessagesList;
@@ -54,6 +60,7 @@ import org.jivesoftware.smack.chat.ChatManager;
 import org.jivesoftware.smack.chat.ChatManagerListener;
 import org.jivesoftware.smack.chat.ChatMessageListener;
 
+import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -74,9 +81,11 @@ import me.yokeyword.eventbusactivityscope.EventBusActivityScope;
  */
 public class CustomHolderMessagesActivity extends DemoMessagesActivity
         implements MessagesListAdapter.OnMessageLongClickListener<Message>,
+        MessagesListAdapter.OnMessageViewClickListener<Message>,
         MessageInput.InputListener,
         MessageInput.AttachmentsListener, ChatManagerListener,
-        ChatMessageListener {
+        ChatMessageListener, MessageHolders.ContentChecker<Message>{
+    private static final byte CONTENT_TYPE_VOICE = 1;
 
     int f_number;
     private MyXMPPTCPConnectionOnLine connection;//连接
@@ -112,7 +121,9 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
             if((helper.getMsgFromId()).equals(friend_id)&&(helper.getMsgTo()).equals(user_id))
             {
                 if(helper.getMsgType()!=null&&helper.getMsgType().equals("img")){
-                    message.setImage(new Message.Image(helper.getMsgContent()));
+                    //message.setImage(new Message.Image(helper.getMsgContent()));
+                    message.setVoice(new Message.Voice("http://192.168.1.109:8080/temp-rainy/test.mp3",210));
+                    Log.i("注意","加入声音");
                 }
                 messagesAdapter.addToStart(message,true);//加入下方列表
                 //System.identityHashCode(messagesList);
@@ -217,6 +228,19 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
 
 
     }
+
+    @Override
+    public boolean hasContentFor(Message message, byte type) {
+        switch (type) {
+            case CONTENT_TYPE_VOICE:
+                return message.getVoice() != null
+                        && message.getVoice().getUrl() != null
+                        && !message.getVoice().getUrl().isEmpty();
+        }
+        return false;
+    }
+
+
 
     private class refreshTask extends AsyncTask<List<String>, Object, Short> {
         private List new_msgs = new ArrayList<Message>();
@@ -335,6 +359,23 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
         AppUtils.showToast(this, R.string.on_log_click_message, false);
     }
 
+    @Override
+    public void onMessageViewClick(View view, Message message) {
+        //TODO: 点击界面，如果是音乐则播放他
+        //AppUtils.showToast(this, message.getText(), false);
+        AppUtils.showToast(this, "http://192.168.1.109:8080/temp-rainy/test.mp3", false);
+        Uri myUri = Uri.parse("http://192.168.1.109:8080/temp-rainy/test.mp3"); // initialize Uri here
+        MediaPlayer mediaPlayer = new MediaPlayer();
+        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        try {
+            mediaPlayer.setDataSource(getApplicationContext(), myUri);
+            mediaPlayer.prepare();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        mediaPlayer.start();
+        //File remoteFile = new File(message.getText());
+    }
     private void initChatManager(){
         connection = MyXMPPTCPConnectionOnLine.getInstance();
         if(connection != null ){
@@ -381,7 +422,14 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
                         R.layout.item_custom_incoming_image_message)
                 .setOutcomingImageConfig(
                         CustomOutcomingImageMessageViewHolder.class,
-                        R.layout.item_custom_outcoming_image_message);
+                        R.layout.item_custom_outcoming_image_message)
+                .registerContentType(
+                        CONTENT_TYPE_VOICE,
+                        IncomingVoiceMessageViewHolder.class,
+                        R.layout.item_custom_incoming_voice_message,
+                        OutcomingVoiceMessageViewHolder.class,
+                        R.layout.item_custom_outcoming_voice_message,
+                        this);
 
         //配置适配器内容，第一个参数为发送者的id，id不同则在右侧
         super.accept_id =user_id;//接收者为此用户
@@ -390,6 +438,7 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
         //配置点击事件
         super.messagesAdapter.setOnMessageLongClickListener(this);
         super.messagesAdapter.setLoadMoreListener(this);
+        super.messagesAdapter.setOnMessageViewClickListener(this);
         //把配置好的适配器给List
         messagesList.setAdapter(super.messagesAdapter);
     }

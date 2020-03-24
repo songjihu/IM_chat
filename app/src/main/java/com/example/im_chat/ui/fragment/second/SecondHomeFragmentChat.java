@@ -87,7 +87,6 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
     private String uTitles_name = new String();
     private final static Comparator<Object> CHINA_COMPARE = Collator.getInstance(java.util.Locale.CHINA);//排序规则
     private List<String> inputList = new ArrayList<String>();
-    private List<String> inputList1 = new ArrayList<String>();
     private Roster roster;
     private MyXMPPTCPConnectionOnLine connection;
 
@@ -271,11 +270,13 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
                             System.out.println("收到请求！拒绝订阅" + from);
                         } else if (presence.getType().equals(Presence.Type.unavailable)) {//用户离线
                             System.out.println("收到请求！用户离线" + from+"---");
+                            List<String> inputList1 = new ArrayList<String>();
                             inputList1.add(from);
                             new setToOffline().execute(inputList1);
                             //inputList1.clear();
                         } else if (presence.getType().equals(Presence.Type.available)) {//上线
                             System.out.println("收到请求！上线" + from+"---");
+                            List<String> inputList1 = new ArrayList<String>();
                             inputList1.add(from);
                             new setToOnline().execute(inputList1);
                             //inputList1.clear();
@@ -437,7 +438,6 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
                     Friend tt= mAdapter.getItem(i);
                     tt.setOnline("[用户离线]");
                     mAdapter.setData(i,tt);
-                    inputList1.clear();
                 }
             }
         }
@@ -463,7 +463,6 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
                     Friend tt= mAdapter.getItem(i);
                     tt.setOnline("[在线]");
                     mAdapter.setData(i,tt);
-                    inputList1.clear();
                 }
             }
         }
