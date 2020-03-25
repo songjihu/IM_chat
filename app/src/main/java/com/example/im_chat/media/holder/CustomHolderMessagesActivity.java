@@ -121,9 +121,9 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
             if((helper.getMsgFromId()).equals(friend_id)&&(helper.getMsgTo()).equals(user_id))
             {
                 if(helper.getMsgType()!=null&&helper.getMsgType().equals("img")){
-                    //message.setImage(new Message.Image(helper.getMsgContent()));
-                    message.setVoice(new Message.Voice("http://192.168.1.109:8080/temp-rainy/test.mp3",210));
-                    Log.i("注意","加入声音");
+                    message.setImage(new Message.Image(helper.getMsgContent()));
+                    //message.setVoice(new Message.Voice("http://192.168.1.109:8080/temp-rainy/test.mp3",210));
+                    //Log.i("注意","加入声音");
                 }
                 messagesAdapter.addToStart(message,true);//加入下方列表
                 //System.identityHashCode(messagesList);
@@ -241,73 +241,6 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
     }
 
 
-
-    private class refreshTask extends AsyncTask<List<String>, Object, Short> {
-        private List new_msgs = new ArrayList<Message>();
-        private List input_msgs = new ArrayList<Message>();
-        private List msgs;
-        private ChatMessage msg;
-        private String lastLoadedDate;
-        @Override
-        protected Short doInBackground(List<String>... params) {
-            lastLoadedDate=params[0].get(0);
-            msgs= queryListByMessage();
-            int size = msgs.size();
-            //将数据库中最新的100条加入
-            for (int j = size-1; j >=0; j--) {
-                //Log.i("本地数据库大小",":"+size);
-                msg= (ChatMessage) msgs.get(j);
-                MessageTranslateBack helper=new MessageTranslateBack((String) msg.getMsg());
-                if(new_msgs.size()==100) break;
-                //好友发送的消息
-                if(JID.unescapeNode(helper.getMsgTo()).equals(JID.unescapeNode(accept_id))
-                        &&JID.unescapeNode(helper.getMsgFromId()).equals(JID.unescapeNode(send_id))
-                        &&msg!=null){
-                    Log.i("本地数据库1",":"+JID.unescapeNode(helper.getMsgTo())+"__1___"+JID.unescapeNode(accept_id));
-                    Log.i("本地数据库2",":"+JID.unescapeNode(helper.getMsgFromId())+"___2__"+JID.unescapeNode(send_id));
-                    User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),avatars.get(0),true);
-                    Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper.getMsgDate());
-                    new_msgs.add(message);//从最新一条开始添加
-                }
-                //我发送的消息
-                if(JID.unescapeNode(helper.getMsgTo()).equals(JID.unescapeNode(send_id))
-                        &&JID.unescapeNode(helper.getMsgFromId()).equals(JID.unescapeNode(accept_id))
-                        &&msg!=null){
-                    Log.i("本地数据库1",":"+JID.unescapeNode(helper.getMsgTo())+"__1___"+JID.unescapeNode(send_id));
-                    Log.i("本地数据库2",":"+JID.unescapeNode(helper.getMsgFromId())+"___2__"+JID.unescapeNode(accept_id));
-                    User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),avatars.get(0),true);
-                    Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper.getMsgDate());
-                    new_msgs.add(message);//从最新一条开始添加
-                }
-            }
-            //倒序
-            for(int j=new_msgs.size();j>0;j--)
-            {
-                if(new_msgs.get(j-1)!=null){
-                    input_msgs.add(new_msgs.get(j-1));
-                }
-                else {
-                    break;
-                }
-            }
-
-            return 1;
-        }
-
-        @Override
-        protected void onPostExecute(Short state) {
-            switch (state){
-                case 1:
-                    //messagesAdapter.addToEnd(input_msgs, true);
-                    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                    String str=formatter.format(lastLoadedDate);
-                    Log.i("最后一条的时间",""+str);
-                    break;
-                default:
-                    break;
-            }
-        }
-    }
 
 
     //点击发送的时间，显示输入的文字
