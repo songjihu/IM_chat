@@ -15,6 +15,7 @@ import android.support.annotation.Nullable;
 
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,6 +26,7 @@ import com.example.im_chat.R;
 import com.example.im_chat.activity.WebActivity;
 import com.example.im_chat.entity.MyInfo;
 
+import com.example.im_chat.entity.SendInfo;
 import com.example.im_chat.other.JID;
 
 
@@ -38,6 +40,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -63,6 +66,20 @@ public class AvatarFragment extends SupportFragment {
         uTitles=JID.unescapeNode(data.getUserId());
     }
 
+    @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
+    public void onEvent(SendInfo data) {
+        //接收消息
+        if(data.getMsg()!=null&&data.getMsg().equals("update_avatar")){
+            //更新头像时接收
+            Log.i("接收到要更新的eventbus","ohohoho");
+            List<String> inputList = new ArrayList<String>();
+            inputList.add("延迟更新");
+            new setAvatarTask().execute(inputList);//刷新一次
+
+        }
+
+    }
+
     public static AvatarFragment newInstance() {
 
         Bundle args = new Bundle();
@@ -80,7 +97,9 @@ public class AvatarFragment extends SupportFragment {
         EventBusActivityScope.getDefault(getActivity()).register(this);
         EventBus.getDefault().register(this);
         url="http://192.168.1.109:8080/temp-rainy/user_avatar/"+uTitles+".jpg";
-        new setAvatarTask().execute();//刷新一次
+        List<String> inputList = new ArrayList<String>();
+        inputList.add("直接更新");
+        new setAvatarTask().execute(inputList);//刷新一次
         //imageView.setImageURI(Uri.parse("http://192.168.1.109:8080/temp-rainy/avatar/1.jpg"));
         initView();
         return view;
@@ -91,7 +110,6 @@ public class AvatarFragment extends SupportFragment {
             @Override
             public void onClick(View v) {
                 //开启设置头像网页
-                //TODO:设置开启头像设置网页
                 Intent intent =new Intent(getActivity(), WebActivity.class);
                 Bundle bundle=new Bundle();
                 //传递name参数为name到下一层
@@ -99,7 +117,7 @@ public class AvatarFragment extends SupportFragment {
                 //bundle.putString("name",uuu.getUserName());
                 bundle.putString("url",toOpenUrl);
                 bundle.putString("jid",uTitles);
-                //Log.i("4523543254获取到的name值为",uuu.getUserName());
+                Log.i("4523543254获取到的name值为",uTitles);
                 intent.putExtras(bundle);
                 startActivity(intent);
             }
@@ -112,11 +130,10 @@ public class AvatarFragment extends SupportFragment {
         @Override
         protected Short doInBackground(List<String>... params) {
             try {
+                if(params[0].get(0)!=null&&params[0].get(0).equals("延迟更新")){
+                    Thread.sleep(2000);
+                }
                 myFileUrl = new URL(url);
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            }
-            try {
                 HttpURLConnection conn = (HttpURLConnection) myFileUrl.openConnection();
                 conn.setConnectTimeout(0);
                 conn.setDoInput(true);
@@ -124,7 +141,7 @@ public class AvatarFragment extends SupportFragment {
                 InputStream is = conn.getInputStream();
                 bitmap = BitmapFactory.decodeStream(is);
                 is.close();
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
                 return 0;
             }
@@ -136,6 +153,7 @@ public class AvatarFragment extends SupportFragment {
         @Override
         protected void onPostExecute(Short state) {
             if(state==1){
+                Log.i("更新函数执行","ohohoho");
                 imageView.setImageBitmap(createCircleBitmap(bitmap));
             }
         }

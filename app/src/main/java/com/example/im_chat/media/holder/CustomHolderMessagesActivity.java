@@ -137,13 +137,18 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
     @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
     public void onEvent(SendInfo data) {
         //接收消息
-        Log.i("我也","接收到了！！！");
-        String fromId= data.getUserId();
-        String fromName=data.getUserName();
-        String toId= data.getUserId();
-        String toName=data.getUserName();
-        String msg=data.getMsg();
-        sendChatMessage(msg,"img");
+        if(data.getMsg()!=null&&data.getMsg().equals("update_avatar")){
+            //不是发送消息的不操作
+        }
+        else {
+            Log.i("我也","接收到了！！！");
+            String fromId= data.getUserId();
+            String fromName=data.getUserName();
+            String toId= data.getUserId();
+            String toName=data.getUserName();
+            String msg=data.getMsg();
+            sendChatMessage(msg,"img");
+        }
 
     }
 

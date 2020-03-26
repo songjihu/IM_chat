@@ -167,7 +167,6 @@ public class WebFragment extends Fragment {
                     webView.loadUrl("javascript:showInfoFromJava('" + msg + "')");
                 }
             });
-            //TODO:发送给对方一个图片的guid让对方显示图片
             SendInfo sendInfo=new SendInfo();
             sendInfo.setUserId(user_id);
             sendInfo.setUserName(user_name);
