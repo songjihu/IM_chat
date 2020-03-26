@@ -2,6 +2,7 @@ package com.example.im_chat.activity;
 
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Bitmap;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -120,6 +121,9 @@ public class MainActivity extends SupportActivity implements BaseMainFragment.On
         }
     };
 
+    private Bitmap bitmap = null;
+
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -145,7 +149,7 @@ public class MainActivity extends SupportActivity implements BaseMainFragment.On
 
         //获取好友列表
         inputList.add(user_id);
-        new getFriendListTask().execute(inputList);//刷新一次
+        //new getFriendListTask().execute(inputList);//刷新一次
 
 
         myInfo.setUserId(user_id);
@@ -193,7 +197,7 @@ public class MainActivity extends SupportActivity implements BaseMainFragment.On
                         if(!connection.isConnected()){
                             connection.connect();
                         }
-                        new getFriendListTask().execute(inputList);
+                        //new getFriendListTask().execute(inputList);
                         Thread.sleep(3000);
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -489,7 +493,8 @@ public class MainActivity extends SupportActivity implements BaseMainFragment.On
                                 rs.getString("jid"),
                                 rs.getString("send_name"),
                                 "lastmsg",
-                                "["+userstatus+"]"));
+                                "["+userstatus+"]",
+                                bitmap));
                     }
                 }
                 sql="SELECT * FROM `friendlist`WHERE jid = '"+ JID.unescapeNode(params[0].get(0))+"'AND accepted ='1'";//
@@ -509,7 +514,8 @@ public class MainActivity extends SupportActivity implements BaseMainFragment.On
                                 rs.getString("fjid"),
                                 rs.getString("accept_name"),
                                 "lastmsg",
-                                "["+userstatus+"]"));
+                                "["+userstatus+"]",
+                                bitmap));
                     }
                 }
                 JDBCUtils.close(rs,st,cn);

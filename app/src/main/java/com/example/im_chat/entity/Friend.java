@@ -1,4 +1,5 @@
 package com.example.im_chat.entity;
+import android.graphics.Bitmap;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -14,6 +15,15 @@ public class Friend implements Parcelable{
     private String name;
     private String online;
     private String lastmessage;
+    private Bitmap avatar;
+
+    public Bitmap getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(Bitmap avatar) {
+        this.avatar = avatar;
+    }
 
     public String getLastmessage() {
         return lastmessage;
@@ -39,11 +49,12 @@ public class Friend implements Parcelable{
         this.name = name;
     }
 
-    public Friend(String jid, String name,String lastmessage,String online) {
+    public Friend(String jid, String name,String lastmessage,String online,Bitmap avatar) {
         this.jid = jid;
         this.name = name;
         this.online = online;
         this.lastmessage=lastmessage;
+        this.avatar=avatar;
     }
 
 

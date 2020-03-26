@@ -13,7 +13,8 @@
             android:id="@+id/dialogAvatar_f"
             android:layout_width="@dimen/dialog_avatar_width"
             android:layout_height="@dimen/dialog_avatar_height"
-            android:layout_margin="16dp"/>
+            android:layout_margin="16dp"
+            android:background="@color/white"/>
 
         <TextView
             android:id="@+id/dialogName_f"
@@ -69,8 +70,8 @@
 
         </RelativeLayout>
 
-        <TextView
-            android:id="@id/dialogUnreadBubble"
+        <ImageView
+            android:id="@+id/dialogBubble_f"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignEnd="@id/dialogAvatar_f"
@@ -79,8 +80,8 @@
             android:layout_marginEnd="-5dp"
             android:layout_marginRight="-5dp"
             android:layout_marginTop="-5dp"
-            android:background="@drawable/bubble_circle"
             android:ellipsize="end"
+            android:background="@drawable/bubble_circle"
             android:fontFamily="@string/font_fontFamily_medium"
             android:gravity="center"
             android:lines="1"/>

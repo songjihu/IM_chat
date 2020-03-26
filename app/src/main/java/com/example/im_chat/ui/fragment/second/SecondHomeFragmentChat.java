@@ -1,6 +1,12 @@
 package com.example.im_chat.ui.fragment.second;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -13,6 +19,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 
@@ -31,6 +38,9 @@ import org.jivesoftware.smack.roster.Roster;
 import org.jivesoftware.smack.roster.RosterEntry;
 import org.jivesoftware.smack.roster.RosterListener;
 
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -89,6 +99,13 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
     private List<String> inputList = new ArrayList<String>();
     private Roster roster;
     private MyXMPPTCPConnectionOnLine connection;
+    //更新用户头像变量（在适配器中更新存在内存泄漏）
+    private String sourceUrl="http://192.168.1.109:8080/temp-rainy/user_avatar/";
+    private URL myFileUrl = null;
+    private Bitmap bitmap = null;
+    private String url;
+    private ImageView imageView;
+    private String fuTitles;
 
     //显示好友列表
 
@@ -330,11 +347,21 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
                     while(rs1.next()){
                         userstatus="在线";
                     }
+                    url=sourceUrl+rs.getString("jid")+".jpg";
+                    myFileUrl = new URL(url);
+                    HttpURLConnection conn = (HttpURLConnection) myFileUrl.openConnection();
+                    conn.setConnectTimeout(0);
+                    conn.setDoInput(true);
+                    conn.connect();
+                    InputStream is = conn.getInputStream();
+                    bitmap = BitmapFactory.decodeStream(is);
+                    is.close();
                     addItem.add(new Friend(
                             rs.getString("jid"),
                             rs.getString("send_name"),
                             "lastmsg",
-                            "["+userstatus+"]"));
+                            "["+userstatus+"]",
+                            bitmap));
                 }
                 sql="SELECT * FROM `friendlist`WHERE jid = '"+ JID.unescapeNode(params[0].get(0))+"'AND accepted ='1'";//
                 rs=st.executeQuery(sql);
@@ -348,15 +375,25 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
                     while(rs1.next()){
                         userstatus="在线";
                     }
+                    url=sourceUrl+rs.getString("fjid")+".jpg";
+                    myFileUrl = new URL(url);
+                    HttpURLConnection conn = (HttpURLConnection) myFileUrl.openConnection();
+                    conn.setConnectTimeout(0);
+                    conn.setDoInput(true);
+                    conn.connect();
+                    InputStream is = conn.getInputStream();
+                    bitmap = BitmapFactory.decodeStream(is);
+                    is.close();
                     addItem.add(new Friend(
                             rs.getString("fjid"),
                             rs.getString("accept_name"),
                             "lastmsg",
-                            "["+userstatus+"]"));
+                            "["+userstatus+"]",
+                            bitmap));
                 }
                 JDBCUtils.close(rs,st,cn);
 
-            } catch (SQLException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
                 return 0;
             }
@@ -547,6 +584,30 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
     public void presenceChanged(Presence presence) {
 
     }
+
+    private Bitmap createCircleBitmap(Bitmap resource)
+    {
+        //获取图片的宽度
+        int width = resource.getWidth();
+        Paint paint = new Paint();
+        //设置抗锯齿
+        paint.setAntiAlias(true);
+
+        //创建一个与原bitmap一样宽度的正方形bitmap
+        Bitmap circleBitmap = Bitmap.createBitmap(width, width, Bitmap.Config.ARGB_8888);
+        //以该bitmap为低创建一块画布
+        Canvas canvas = new Canvas(circleBitmap);
+        //以（width/2, width/2）为圆心，width/2为半径画一个圆
+        canvas.drawCircle(width/2, width/2, width/2, paint);
+
+        //设置画笔为取交集模式
+        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
+        //裁剪图片
+        canvas.drawBitmap(resource, 0, 0, paint);
+
+        return circleBitmap;
+    }
+
     @Override
     public void onDestroyView() {
         super.onDestroyView();
