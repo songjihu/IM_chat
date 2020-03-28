@@ -39,9 +39,7 @@ import com.example.im_chat.utils.JDBCUtils;
 import com.example.im_chat.utils.JDBCUtils1;
 import com.example.im_chat.utils.MyXMPPTCPConnectionOnLine;
 import com.squareup.picasso.Picasso;
-import com.stfalcon.chatkit.commons.ImageLoader;
-import com.stfalcon.chatkit.messages.MessageInput;
-import com.stfalcon.chatkit.messages.MessagesListAdapter;
+
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.greendao.query.QueryBuilder;
@@ -74,11 +72,8 @@ import static android.os.Build.TIME;
  * @auther songjihu
  * @since 2020/2/1 9:46
  */
-public class MainActivity extends SupportActivity implements BaseMainFragment.OnBackToFirstListener, MessagesListAdapter.SelectionListener,
-        MessagesListAdapter.OnLoadMoreListener ,MessagesListAdapter.OnMessageLongClickListener<Message>,
-        MessageInput.InputListener,
-        MessageInput.AttachmentsListener, ChatManagerListener,
-        ChatMessageListener {
+public class MainActivity extends SupportActivity implements BaseMainFragment.OnBackToFirstListener,
+        ChatMessageListener,ChatManagerListener{
     private String serveraddress ="@123.56.163.211";
     public Chat chat[]=new Chat[1002];//会话
     private MyXMPPTCPConnectionOnLine connection;//连接
@@ -98,8 +93,7 @@ public class MainActivity extends SupportActivity implements BaseMainFragment.On
     private static final int TOTAL_MESSAGES_COUNT = 100;
 
     protected final String senderId = "0";
-    protected ImageLoader imageLoader;
-    public static MessagesListAdapter<Message> messagesAdapter;
+
 
     private Menu menu;
     private int selectionCount;
@@ -179,12 +173,7 @@ public class MainActivity extends SupportActivity implements BaseMainFragment.On
 
         initView();
 
-        imageLoader = new ImageLoader() {
-            @Override
-            public void loadImage(ImageView imageView, String url, Object payload) {
-                Picasso.with(MainActivity.this).load(url).into(imageView);
-            }
-        };
+
         initGreenDao();
         //实时刷新列表
         new Thread(new Runnable() {
@@ -226,71 +215,6 @@ public class MainActivity extends SupportActivity implements BaseMainFragment.On
         QueryBuilder<ChatMessage> qb = daoSession.queryBuilder(ChatMessage.class);
         List<ChatMessage> list = qb.list(); //查出当前对应的数据
         return list;
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        this.menu = menu;
-        getMenuInflater().inflate(R.menu.chat_actions_menu, menu);
-        onSelectionChanged(0);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.action_delete:
-                messagesAdapter.deleteSelectedMessages();
-                break;
-            case R.id.action_copy:
-                messagesAdapter.copySelectedMessagesText(this, getMessageStringFormatter(), true);
-                AppUtils.showToast(this, R.string.copied_message, true);
-                break;
-        }
-        return true;
-    }
-
-
-    @Override
-    public void onLoadMore(int page, int totalItemsCount) {
-        Log.i("TAG", "onLoadMore: " + page + " " + totalItemsCount);
-        if (totalItemsCount < TOTAL_MESSAGES_COUNT) {
-            //loadMessages();
-        }
-    }
-
-    @Override
-    public void onSelectionChanged(int count) {
-        this.selectionCount = count;
-        menu.findItem(R.id.action_delete).setVisible(count > 0);
-        menu.findItem(R.id.action_copy).setVisible(count > 0);
-    }
-
-    protected void loadMessages() {
-        new Handler().postDelayed(new Runnable() { //imitation of internet connection
-            @Override
-            public void run() {
-                ArrayList<Message> messages = MessagesFixtures.getMessages(lastLoadedDate);
-                lastLoadedDate = messages.get(messages.size() - 1).getCreatedAt();
-                messagesAdapter.addToEnd(messages, false);
-            }
-        }, 1000);
-    }
-
-    private MessagesListAdapter.Formatter<Message> getMessageStringFormatter() {
-        return new MessagesListAdapter.Formatter<Message>() {
-            @Override
-            public String format(Message message) {
-                String createdAt = new SimpleDateFormat("MMM d, EEE 'at' h:mm a", Locale.getDefault())
-                        .format(message.getCreatedAt());
-
-                String text = message.getText();
-                if (text == null) text = "[attachment]";
-
-                return String.format(Locale.getDefault(), "%s: %s (%s)",
-                        message.getUser().getName(), text, createdAt);
-            }
-        };
     }
 
 
@@ -449,20 +373,6 @@ public class MainActivity extends SupportActivity implements BaseMainFragment.On
         return false;
     }
 
-    @Override
-    public void onAddAttachments() {
-
-    }
-
-    @Override
-    public boolean onSubmit(CharSequence input) {
-        return false;
-    }
-
-    @Override
-    public void onMessageLongClick(Message message) {
-
-    }
 
 
     private class getFriendListTask extends AsyncTask<List<String>, Object, Short> {

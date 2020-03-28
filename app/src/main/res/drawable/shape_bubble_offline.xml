@@ -1,11 +1,12 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
        android:shape="oval">
 
-    <solid android:color="#aaaaaa"/>
+    <!-- <solid android:color="#aaaaaa" />
 
     <stroke
-        android:width="2dp"
-        android:color="@color/white"/>
+        android:width="2dp"/>
+      android:color="@color/white"注释内容   -->
+
 
     <size
         android:width="20dp"

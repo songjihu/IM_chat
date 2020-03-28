@@ -40,8 +40,9 @@ import java.util.Locale;
  * @since 2020/2/25 15:52
  */
 public abstract class DemoMessagesActivity extends AppCompatActivity
-        implements MessagesListAdapter.SelectionListener,
-        MessagesListAdapter.OnLoadMoreListener {
+        implements MessagesListAdapter.SelectionListener
+        ,MessagesListAdapter.OnLoadMoreListener
+        {
     private SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     private static final int TOTAL_MESSAGES_COUNT = 100;
 
@@ -59,6 +60,8 @@ public abstract class DemoMessagesActivity extends AppCompatActivity
     public String accept_id;
     public String send_id;
     private DaoSession daoSession;
+    private String sourceUrl="http://192.168.1.109:8080/temp-rainy/user_avatar/";
+    private Boolean firstFlag=true;
     static ArrayList<String> avatars = new ArrayList<String>() {
         {
             add("http://d.lanrentuku.com/down/png/1904/international_food/fried_rice.png");
@@ -68,7 +71,6 @@ public abstract class DemoMessagesActivity extends AppCompatActivity
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         imageLoader = new ImageLoader() {
             @Override
             public void loadImage(ImageView imageView, String url, Object payload) {
@@ -94,63 +96,69 @@ public abstract class DemoMessagesActivity extends AppCompatActivity
     @Override
     protected void onStart() {
         super.onStart();
-
+        if(firstFlag){
+            firstFlag=false;
+            messagesAdapter.clear();
+            messagesAdapter.clear(true);
+            Log.i("执行一次start","458976803");
+            msgs= queryListByMessage();
+            int size = msgs.size();
+            //将数据库中最新的100条加入
+            for (int j = size-1; j >=0; j--) {
+                Log.i("本地数据库大小",":"+size);
+                msg= (ChatMessage) msgs.get(j);
+                MessageTranslateBack helper=new MessageTranslateBack((String) msg.getMsg());
+                if(new_msgs.size()==100) break;
+                //好友发送的消息
+                if(JID.unescapeNode(helper.getMsgTo()).equals(JID.unescapeNode(accept_id))
+                        &&JID.unescapeNode(helper.getMsgFromId()).equals(JID.unescapeNode(send_id))
+                        &&msg!=null){
+                    Log.i("本地数据库1",":"+JID.unescapeNode(helper.getMsgTo())+"__1___"+JID.unescapeNode(accept_id));
+                    Log.i("本地数据库2",":"+JID.unescapeNode(helper.getMsgFromId())+"___2__"+JID.unescapeNode(send_id));
+                    User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),sourceUrl+helper.getMsgFromId()+".jpg",true);
+                    Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper.getMsgDate());
+                    if(helper.getMsgType()!=null&&helper.getMsgType().equals("img")){
+                        message.setImage(new Message.Image(helper.getMsgContent()));
+                    }
+                    new_msgs.add(message);//从最新一条开始添加
+                }
+                //我发送的消息
+                if(JID.unescapeNode(helper.getMsgTo()).equals(JID.unescapeNode(send_id))
+                        &&JID.unescapeNode(helper.getMsgFromId()).equals(JID.unescapeNode(accept_id))
+                        &&msg!=null){
+                    Log.i("本地数据库1",":"+JID.unescapeNode(helper.getMsgTo())+"__1___"+JID.unescapeNode(send_id));
+                    Log.i("本地数据库2",":"+JID.unescapeNode(helper.getMsgFromId())+"___2__"+JID.unescapeNode(accept_id));
+                    User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),sourceUrl+helper.getMsgFromId()+".jpg",true);
+                    Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper.getMsgDate());
+                    if(helper.getMsgType()!=null&&helper.getMsgType().equals("img")){
+                        message.setImage(new Message.Image(helper.getMsgContent()));
+                    }
+                    new_msgs.add(message);//从最新一条开始添加
+                }
+            }
+            //倒序
+            for(int j=new_msgs.size();j>0;j--)
+            {
+                if(new_msgs.get(j-1)!=null){
+                    input_msgs.add(new_msgs.get(j-1));
+                }
+                else {
+                    break;
+                }
+            }
+            messagesAdapter.clear();
+            messagesAdapter.addToEnd(input_msgs, true);
+            if(input_msgs.size()>0){
+                Message t=(Message) input_msgs.get(0);
+                lastLoadedDate=formatter.format(t.getCreatedAt());
+            }
+            else {
+                lastLoadedDate=formatter.format(new Date());
+            }
+        }
         //messagesAdapter.addToStart(MessagesFixtures.getTextMessage(), true);
         //ChatUtil ru = new ChatUtil();
 
-        msgs= queryListByMessage();
-        int size = msgs.size();
-        //将数据库中最新的100条加入
-        for (int j = size-1; j >=0; j--) {
-            //Log.i("本地数据库大小",":"+size);
-            msg= (ChatMessage) msgs.get(j);
-            MessageTranslateBack helper=new MessageTranslateBack((String) msg.getMsg());
-            if(new_msgs.size()==100) break;
-            //好友发送的消息
-            if(JID.unescapeNode(helper.getMsgTo()).equals(JID.unescapeNode(accept_id))
-                    &&JID.unescapeNode(helper.getMsgFromId()).equals(JID.unescapeNode(send_id))
-                    &&msg!=null){
-                Log.i("本地数据库1",":"+JID.unescapeNode(helper.getMsgTo())+"__1___"+JID.unescapeNode(accept_id));
-                Log.i("本地数据库2",":"+JID.unescapeNode(helper.getMsgFromId())+"___2__"+JID.unescapeNode(send_id));
-                User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),avatars.get(0),true);
-                Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper.getMsgDate());
-                if(helper.getMsgType()!=null&&helper.getMsgType().equals("img")){
-                    message.setImage(new Message.Image(helper.getMsgContent()));
-                }
-                new_msgs.add(message);//从最新一条开始添加
-            }
-            //我发送的消息
-            if(JID.unescapeNode(helper.getMsgTo()).equals(JID.unescapeNode(send_id))
-                    &&JID.unescapeNode(helper.getMsgFromId()).equals(JID.unescapeNode(accept_id))
-                    &&msg!=null){
-                Log.i("本地数据库1",":"+JID.unescapeNode(helper.getMsgTo())+"__1___"+JID.unescapeNode(send_id));
-                Log.i("本地数据库2",":"+JID.unescapeNode(helper.getMsgFromId())+"___2__"+JID.unescapeNode(accept_id));
-                User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),avatars.get(0),true);
-                Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper.getMsgDate());
-                if(helper.getMsgType()!=null&&helper.getMsgType().equals("img")){
-                    message.setImage(new Message.Image(helper.getMsgContent()));
-                }
-                new_msgs.add(message);//从最新一条开始添加
-            }
-        }
-        //倒序
-        for(int j=new_msgs.size();j>0;j--)
-        {
-            if(new_msgs.get(j-1)!=null){
-                input_msgs.add(new_msgs.get(j-1));
-            }
-            else {
-                break;
-            }
-        }
-        messagesAdapter.addToEnd(input_msgs, true);
-        if(input_msgs.size()>0){
-            Message t=(Message) input_msgs.get(0);
-            lastLoadedDate=formatter.format(t.getCreatedAt());
-        }
-        else {
-            lastLoadedDate=formatter.format(new Date());
-        }
 
     }
 
@@ -193,10 +201,7 @@ public abstract class DemoMessagesActivity extends AppCompatActivity
 
     @Override
     public void onLoadMore(int page, int totalItemsCount) {
-        Log.i("TAG", "onLoadMore: " + page + " " + totalItemsCount);
-        if (totalItemsCount < TOTAL_MESSAGES_COUNT) {
-            //loadMessages();
-        }
+
     }
 
     @Override

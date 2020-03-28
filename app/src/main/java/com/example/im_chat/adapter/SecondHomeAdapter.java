@@ -1,12 +1,14 @@
 package com.example.im_chat.adapter;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
+import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.RecyclerView;
@@ -70,12 +72,15 @@ public class SecondHomeAdapter extends BaseQuickAdapter<Friend, BaseViewHolder> 
         ((ImageView) helper.getView(R.id.dialogAvatar_f)).setImageBitmap(bm);//好友头像
         ((TextView) helper.getView(R.id.dialogName_f)).setText(name);//姓名
         ((TextView) helper.getView(R.id.dialogLastMessage_f)).setText(state);//状态
+        Resources resources = mContext.getResources();
+        Drawable drawable_online = resources.getDrawable(R.drawable.bubble_online);
+        Drawable drawable_offline = resources.getDrawable(R.drawable.bubble_offline);
         if(state.contains("在线")){
-            Bitmap bitmap1 = BitmapFactory.decodeResource(mContext.getResources(),R.drawable.bubble_online);
-            ((ImageView) helper.getView(R.id.dialogBubble_f)).setImageBitmap(bitmap1);//设置上线图标
+            //Bitmap bitmap1 = BitmapFactory.decodeResource(mContext.getResources(),R.drawable.bubble_online);
+            (helper.getView(R.id.dialogBubble_f)).setBackground(drawable_online);//设置上线图标
         }else {
-            Bitmap bitmap1 = BitmapFactory.decodeResource(mContext.getResources(),R.drawable.bubble_offline);
-            ((ImageView) helper.getView(R.id.dialogBubble_f)).setImageBitmap(bitmap1);//设置下线图标
+            //Bitmap bitmap1 = BitmapFactory.decodeResource(mContext.getResources(),R.drawable.bubble_offline);
+            (helper.getView(R.id.dialogBubble_f)).setBackground(drawable_offline);//设置下线图标
         }
     }
 
@@ -93,6 +98,7 @@ public class SecondHomeAdapter extends BaseQuickAdapter<Friend, BaseViewHolder> 
                 conn.setDoInput(true);
                 conn.connect();
                 InputStream is = conn.getInputStream();
+                Thread.sleep(2000);
                 bitmap = BitmapFactory.decodeStream(is);
                 is.close();
             } catch (Exception e) {

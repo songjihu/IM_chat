@@ -5,12 +5,16 @@ import android.app.FragmentTransaction;
 import android.content.Context;
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.AudioManager;
+import android.media.Image;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.ContactsContract;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -62,6 +66,9 @@ import org.jivesoftware.smack.chat.ChatMessageListener;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -103,6 +110,13 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
     private String uTitles_name;
     private String latestJson;
     private Boolean bottom_flag=false;
+    private String sourceUrl="http://192.168.1.109:8080/temp-rainy/user_avatar/";
+    private URL myFileUrl = null;
+    private Bitmap bitmap = null;
+    private String url;
+    private Message messageToUpdate;
+    private Message.Image t;
+
 
     @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
     public void onEvent(MyInfo data) {
@@ -114,7 +128,7 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
         //Log.i("接收到----",latestJson);
         if(data.getSendId().equals("add_msg")){
             MessageTranslateBack helper=new MessageTranslateBack(latestJson);
-            User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),avatars.get(0),true);
+            User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),sourceUrl+helper.getMsgFromId()+".jpg",true);
             //ChatMessage chatMessage = new ChatMessage((String) msg.obj, 1);
             Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper.getMsgDate());
             //messageList.add(chatMessage);
@@ -123,11 +137,11 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
                 if(helper.getMsgType()!=null&&helper.getMsgType().equals("img")){
                     message.setImage(new Message.Image(helper.getMsgContent()));
                     //message.setVoice(new Message.Voice("http://192.168.1.109:8080/temp-rainy/test.mp3",210));
-                    //Log.i("注意","加入声音");
+                    Log.i("注意","加入图片");
                 }
                 messagesAdapter.addToStart(message,true);//加入下方列表
                 //System.identityHashCode(messagesList);
-                messagesAdapter.notifyDataSetChanged();
+                //messagesAdapter.notifyDataSetChanged();
                 Log.i("1发送11111111111111111",message.getText());
             }
         }
@@ -311,7 +325,7 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
         } catch (IOException e) {
             e.printStackTrace();
         }
-        mediaPlayer.start();
+        //mediaPlayer.start();
         //File remoteFile = new File(message.getText());
     }
     private void initChatManager(){
@@ -375,7 +389,7 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
         super.messagesAdapter = new MessagesListAdapter<>(user_id, holdersConfig, super.imageLoader);
         //配置点击事件
         super.messagesAdapter.setOnMessageLongClickListener(this);
-        super.messagesAdapter.setLoadMoreListener(this);
+        //super.messagesAdapter.setLoadMoreListener(this);
         super.messagesAdapter.setOnMessageViewClickListener(this);
         //把配置好的适配器给List
         messagesList.setAdapter(super.messagesAdapter);
@@ -384,29 +398,46 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
     //发消息
     private void sendChatMessage(String msgContent,String type){
         MessageTranslateTo helper=new MessageTranslateTo(user_name,user_id,friend_id,msgContent,type);
-        User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),avatars.get(0),true);
+        User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),sourceUrl+helper.getMsgFromId()+".jpg",true);
         MessageTranslateBack helper1=new MessageTranslateBack(helper.getMsgJson());
         Log.i("2发送222222222222222",helper.getMsgJson());
-        Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper1.getMsgDate());
+        Message message = new Message(helper.getMsgFrom()+helper1.getMsgDate(),//id
+                user,//用户
+                helper.getMsgContent(),//内容
+                helper1.getMsgDate());//时间
         if(type.equals("img")) {
             message.setImage(new Message.Image(msgContent));
         }
-        messagesAdapter.addToStart(message,true);//加入下方列表
+        //if(type.equals("text")) {
+            ChatMessage chat_msg =new ChatMessage(null,(String) helper.getMsgJson());
+            daoSession.insert(chat_msg);
+            Log.i("数据库加入++++++",(String) helper.getMsgJson());
+            messagesAdapter.addToStart(message,true);//加入下方列表
+        if(type.equals("img")) {
+            //用一个线程去更新图片
+            List<String> inputList = new ArrayList<String>();
+            inputList.add(message.getImageUrl());//url id
+            messageToUpdate=message;
+            new setAvatarTask().execute(inputList);
+        }
+        List<String> inputList = new ArrayList<String>();
+        inputList.add(message.getImageUrl());//url id
+        inputList.add(helper.getMsgFrom()+helper1.getMsgDate());
+
+
+        //}
         if(chat!= null){
             try {
                 //发送消息，参数为发送的消息内容
                 chat.sendMessage(helper.getMsgJson());
                 Log.i("0发送",helper.getMsgJson());
                 //将所有接收到的消息，加入到数据库
-                ChatMessage chat_msg =new ChatMessage(null,(String) helper.getMsgJson());
-                daoSession.insert(chat_msg);
-                Log.i("数据库加入++++++",(String) helper.getMsgJson());
                 MyInfo myInfo=new MyInfo();
                 myInfo.setUserId(JID.escapeNode(user_id));
                 myInfo.setUserName(user_name);
                 myInfo.setLatestJson(helper.getMsgJson());//加入最新消息
                 myInfo.setSendId("add_msg_self:"+friend_name);
-                EventBus.getDefault().postSticky(myInfo);
+                //EventBus.getDefault().postSticky(myInfo);
             } catch (SmackException.NotConnectedException e) {
                 e.printStackTrace();
             }
@@ -432,14 +463,61 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
        // }
     }
 
+    private class setAvatarTask extends AsyncTask<List<String>, Object, Short> {
+        @Override
+        protected Short doInBackground(List<String>... params) {
+            try {
+                //messageToUpdate.setImage(new Message.Image(url));
+                Thread.sleep(4000);
+                Log.i("更新函数执行","加载图片");
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                return 0;
+            }
+            //获取完成后发送
+            //EventBus.getDefault().postSticky(myInfo);
+            return 1;
+        }
+
+        @Override
+        protected void onPostExecute(Short state) {
+            if(state==1){
+                messagesAdapter.update(messageToUpdate.getId(),messageToUpdate);
+                //imageView.setImageBitmap(bitmap);
+                //textView.setText("");
+            }
+        }
+
+    }
+
     @Override
     public void onDestroy() {
         //处理内存
         chatManager.removeChatListener(this);
+        messagesAdapter.clear();
         finish();
         super.onDestroy();
         EventBus.getDefault().unregister(this);
     }
+
+    @Override
+    public void onPause(){
+        super.onPause();
+        Log.i("暂停方法执行","4324352");
+        //messagesAdapter.clear();
+        //messagesAdapter.clear(true);
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        //messagesAdapter.clear();
+        //messagesAdapter.clear(true);
+        Log.i("开始方法执行","4324352");
+    }
+
+
 
 
 }

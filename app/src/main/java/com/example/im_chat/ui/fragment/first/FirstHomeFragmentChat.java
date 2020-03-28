@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.ContactsContract;
 import android.support.annotation.Nullable;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.RecyclerView;
@@ -81,6 +82,7 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
     private String user_name;//用户名
     private String uTitles_name = new String();
     private List<Dialog> unreadList=new ArrayList<>();//未读消息列表
+    private String sourceUrl="http://192.168.1.109:8080/temp-rainy/user_avatar/";
 
 
 
@@ -133,7 +135,7 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
             latestJson=data.getLatestJson();
             MessageTranslateBack helper=new MessageTranslateBack(latestJson);
             //获取一个好友
-            User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),avatars.get(0),true);
+            User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),sourceUrl+helper.getMsgFromId()+".jpg",true);
             ArrayList<User> users = new ArrayList<>();
             users.add(user);
             //ChatMessage chatMessage = new ChatMessage((String) msg.obj, 1);
@@ -156,18 +158,17 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
                 }
             }
             //加入顶部
-            Dialog t=new Dialog(FriendId,FriendName,avatars.get(0),users,message,unreadCount+1);
+            Log.i("加入id+++++",sourceUrl+FriendId+".jpg");
+            Dialog t=new Dialog(FriendId,FriendName,sourceUrl+FriendId+".jpg",users,message,unreadCount+1);
+
             dialogsAdapter.addItem(0,t);
+            //imageLoader.loadImage(dialogsAdapter.getItemById(FriendId).getClass().);
+
             unreadList.add(0,t);
         }
 
     }
 
-    static ArrayList<String> avatars = new ArrayList<String>() {
-        {
-            add("http://d.lanrentuku.com/down/png/1904/international_food/fried_rice.png");
-        }
-    };
     private static DaoSession daoSession;//配置数据库
 
 
@@ -204,6 +205,9 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
     public void onDialogClick(Dialog dialog) {
         User t=(User) dialog.getUsers().get(0);
         Log.i("点击了jid",t.getId()+"姓名"+t.getName());
+        int pos=dialogsAdapter.getDialogPosition(dialog);
+        dialog.setUnreadCount(0);
+        dialogsAdapter.updateItem(pos,dialog);
         Intent intent =new Intent(getActivity(), CustomHolderMessagesActivity.class);
         //用Bundle携带数据
         Bundle bundle=new Bundle();

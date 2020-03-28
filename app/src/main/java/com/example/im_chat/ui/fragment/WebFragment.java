@@ -4,6 +4,7 @@ import android.app.Fragment;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -23,8 +24,15 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import com.example.im_chat.R;
+import com.example.im_chat.db.DaoMaster;
+import com.example.im_chat.db.DaoSession;
+import com.example.im_chat.entity.ChatMessage;
 import com.example.im_chat.entity.MyInfo;
 import com.example.im_chat.entity.SendInfo;
+import com.example.im_chat.helper.MessageTranslateBack;
+import com.example.im_chat.helper.MessageTranslateTo;
+import com.example.im_chat.media.data.model.Message;
+import com.example.im_chat.media.data.model.User;
 import com.example.im_chat.media.holder.CustomHolderMessagesActivity;
 
 import org.greenrobot.eventbus.EventBus;
@@ -43,6 +51,10 @@ public class WebFragment extends Fragment {
     //private String url="http://123.56.163.211:8080/";
     private String url="http://192.168.1.109:8080/";
     private String fileCatalog="temp-rainy/";//服务器目录
+    private String sourceUrl="http://192.168.1.109:8080/temp-rainy/user_avatar/";
+    private static DaoSession daoSession;
+
+
 
 
     @Override
@@ -53,6 +65,7 @@ public class WebFragment extends Fragment {
         user_id= bundle.getString("fromId");
         friend_name= bundle.getString("toName");
         friend_id= bundle.getString("toId");
+        initGreenDao();
     }
 
     @Override
@@ -61,6 +74,13 @@ public class WebFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_web, null);
         initView(view);
         return view;
+    }
+
+    private void initGreenDao() {
+        DaoMaster.DevOpenHelper helper = new DaoMaster.DevOpenHelper(getActivity(), "aserbao.db");
+        SQLiteDatabase db = helper.getWritableDatabase();
+        DaoMaster daoMaster = new DaoMaster(db);
+        daoSession = daoMaster.newSession();
     }
 
     private void initView(View view) {
@@ -173,6 +193,16 @@ public class WebFragment extends Fragment {
             sendInfo.setFriendId(friend_id);
             sendInfo.setFriendName(friend_name);
             sendInfo.setMsg(url+fileCatalog+name);//发送图片位置
+            //将图片消息加入本地数据库
+            MessageTranslateTo helper=new MessageTranslateTo(user_name,user_id,friend_id,sendInfo.getMsg(),"img");
+            User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),sourceUrl+helper.getMsgFromId()+".jpg",true);
+            MessageTranslateBack helper1=new MessageTranslateBack(helper.getMsgJson());
+            Log.i("2发送222222222222222",helper.getMsgJson());
+            Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper1.getMsgDate());
+            message.setImage(new Message.Image(sendInfo.getMsg()));
+            ChatMessage chat_msg =new ChatMessage(null,(String) helper.getMsgJson());
+            //daoSession.insert(chat_msg);
+            Log.i("数据库加入++++++",(String) helper.getMsgJson());
             EventBus.getDefault().postSticky(sendInfo);
 
         }

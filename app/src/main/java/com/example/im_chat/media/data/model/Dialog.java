@@ -15,15 +15,15 @@ public class Dialog implements IDialog<Message> {
     private ArrayList<User> users;
     private Message lastMessage;
 
-    public String getIsOnline() {
-        return isOnline;
-    }
+    //public String getIsOnline() {
+        //return isOnline;
+    //}
 
-    public void setIsOnline(String isOnline) {
-        this.isOnline = isOnline;
-    }
+    //public void setIsOnline(String isOnline) {
+        //this.isOnline = isOnline;
+    //}
 
-    private String isOnline;
+    //private String isOnline;
 
     private int unreadCount;
 
@@ -54,7 +54,7 @@ public class Dialog implements IDialog<Message> {
 
         this.id = id;//用户id
         this.dialogName = name;//用户名
-        this.isOnline=isOnline;//用户是否在线
+        //this.isOnline=isOnline;//用户是否在线
 
     }
 

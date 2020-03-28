@@ -75,6 +75,8 @@ public class AvatarFragment extends SupportFragment {
             List<String> inputList = new ArrayList<String>();
             inputList.add("延迟更新");
             new setAvatarTask().execute(inputList);//刷新一次
+            new setAvatarTask().execute(inputList);//刷新一次
+
 
         }
 
@@ -139,8 +141,12 @@ public class AvatarFragment extends SupportFragment {
                 conn.setDoInput(true);
                 conn.connect();
                 InputStream is = conn.getInputStream();
+                Thread.sleep(2000);
                 bitmap = BitmapFactory.decodeStream(is);
                 is.close();
+                conn.disconnect();
+                is=null;
+                conn=null;
             } catch (Exception e) {
                 e.printStackTrace();
                 return 0;

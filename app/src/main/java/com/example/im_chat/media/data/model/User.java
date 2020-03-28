@@ -34,6 +34,11 @@ public class User implements IUser {
         return avatar;
     }
 
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
+    }
+
+
     public boolean isOnline() {
         return online;
     }
