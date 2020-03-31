@@ -112,7 +112,6 @@ public class FriendInvitationFragment extends SupportFragment {
                 }
             }
         }) .start();
-
     }
 
     Runnable  runnableUi=new  Runnable(){

@@ -35,6 +35,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -66,6 +67,9 @@ import com.example.im_chat.utils.JDBCUtils1;
 import com.example.im_chat.utils.MyXMPPTCPConnectionOnLine;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -146,7 +150,11 @@ public class AddFriendActivity extends Activity implements ConnectionListener, R
                 if(!TextUtils.isEmpty(search_word)){
                     //friendsList=serachFriends(search_word);
                     input=search_word;
-                    handler.post(runnableUi);
+                    //handler.post(runnableUi);
+                    List<String> inputList = new ArrayList<String>();
+                    inputList.add(input);
+                    new searchTask().execute(inputList);//刷新一次
+                    Log.i("点击事件","执行");
                 }
                 else {
                     Toast.makeText(AddFriendActivity.this, "搜索不能为空", Toast.LENGTH_SHORT).show();
@@ -162,11 +170,13 @@ public class AddFriendActivity extends Activity implements ConnectionListener, R
         public void run() {
             //更新界面
             //获取好友名单
-            List<Friend> friendsList = serachFriends(input);
             //设置数据到适配器
-            mAdapter.setDatas(friendsList);
-            recyclerView.setAdapter(mAdapter);
-            recyclerView.scrollToPosition(mAdapter.getItemCount()-1);//此句为设置显示
+            //if(friendsList.size()!=0){
+                Log.i("gengxin","gengxin");
+                mAdapter.setDatas(friendsList);
+                recyclerView.setAdapter(mAdapter);
+                recyclerView.scrollToPosition(mAdapter.getItemCount()-1);//此句为设置显示
+            //}
         }
     };
 
@@ -176,7 +186,6 @@ public class AddFriendActivity extends Activity implements ConnectionListener, R
     //搜索好友并设置
     private List<Friend> serachFriends(final String inputStr){
         final List<Friend> friends = new ArrayList<Friend>();//建立新的list
-        final CountDownLatch countDownLatch = new CountDownLatch(1);
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -202,15 +211,56 @@ public class AddFriendActivity extends Activity implements ConnectionListener, R
                 } catch (SQLException e) {
                     e.printStackTrace();
                 }
-                countDownLatch.countDown();
             }
         }).start();
-        try {
-            countDownLatch.await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
         return friends;
+
+    }
+
+    private class searchTask extends AsyncTask<List<String>, Object, Short> {
+        @Override
+        protected Short doInBackground(List<String>... params) {
+            try {
+                friendsList.clear();
+                String inputStr = params[0].get(0);
+                boolean flag=false;
+                Connection cn= JDBCUtils.getConnection();
+                String sql="SELECT * FROM `user` WHERE user_name LIKE '%"+inputStr+"%' or "
+                        + "jid = '"+inputStr+"'";//模糊搜索
+                Statement st=(Statement)cn.createStatement();
+                ResultSet rs=st.executeQuery(sql);
+                while(rs.next()){
+                    flag=true;
+                    Friend friend = new Friend(rs.getString("jid"),rs.getString("user_name"));
+                    friendsList.add(friend);
+                }
+                if(!flag){
+
+                    //Looper.prepare();
+                    Toast.makeText(AddFriendActivity.this, "未搜索到用户", Toast.LENGTH_SHORT).show();
+                    //Looper.loop();
+                }
+                JDBCUtils.close(rs,st,cn);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return 0;
+            }
+            //获取完成后发送
+            //EventBus.getDefault().postSticky(myInfo);
+            return 1;
+        }
+
+        @Override
+        protected void onPostExecute(Short state) {
+            if(state==1){
+                Log.i("更新","更新");
+                handler.post(runnableUi);
+            }
+            if(state==0){
+                Log.i("更新","faile");
+                handler.post(runnableUi);
+            }
+        }
 
     }
 

@@ -3,6 +3,9 @@ package com.example.im_chat.adapter;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -23,6 +26,7 @@ import com.example.im_chat.activity.AddFriendActivity;
 import com.example.im_chat.entity.Friend;
 import com.example.im_chat.entity.MyInfo;
 import com.example.im_chat.listener.OnItemClickListener;
+import com.example.im_chat.media.holder.holders.messages.CustomIncomingTextMessageViewHolder;
 import com.example.im_chat.other.JID;
 import com.example.im_chat.utils.JDBCUtils;
 import com.example.im_chat.utils.MyXMPPTCPConnection;
@@ -37,6 +41,9 @@ import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.chat.ChatManager;
 import org.jivesoftware.smack.roster.Roster;
 
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -64,6 +71,12 @@ public class AddAdapter extends RecyclerView.Adapter <AddAdapter.VH> {
     private OnItemClickListener mClickListener;
     private MyInfo myInfo=new MyInfo();
     private Calendar calendar = Calendar.getInstance();//获取时间
+    private URL myFileUrl = null;
+    private Bitmap bitmap = null;
+    private String url;
+    private String sourceUrl="http://192.168.1.109:8080/temp-rainy/user_avatar/";
+    private String uTitles;
+    private ImageView outImageView;
 
 
 
@@ -145,10 +158,16 @@ public class AddAdapter extends RecyclerView.Adapter <AddAdapter.VH> {
         // Fragment支持多个View进行变换, 使用适配器时, 需要加以区分
         ViewCompat.setTransitionName(holder.name, String.valueOf(position) + "1");
         ViewCompat.setTransitionName(holder.jid, String.valueOf(position) + "2");
-
+        ViewCompat.setTransitionName(holder.imageView, String.valueOf(position) + "3");
         //配置用户名等参数
         holder.name.setText(item.getName());
         holder.jid.setText(item.getJid());
+
+        List<String> inputList = new ArrayList<String>();
+        inputList.add(item.getJid());
+        outImageView=holder.imageView;
+        new setAvatarTask().execute(inputList);//刷新一次
+
     }
 
     /**
@@ -166,12 +185,14 @@ public class AddAdapter extends RecyclerView.Adapter <AddAdapter.VH> {
     public class VH extends RecyclerView.ViewHolder {
         public TextView name;//昵称
         public TextView jid;//jid
+        public ImageView imageView;//头像
 
 
         public VH(View itemView) {
             super(itemView);
             name = itemView.findViewById(R.id.text_Friend_name);
             jid = (TextView) itemView.findViewById(R.id.text_Friend_jid);
+            imageView = itemView.findViewById(R.id.img_Friend_ic);
         }
     }
 
@@ -205,4 +226,37 @@ public class AddAdapter extends RecyclerView.Adapter <AddAdapter.VH> {
         connection = MyXMPPTCPConnectionOnLine.getInstance();
     }
 
+
+    private class setAvatarTask extends AsyncTask<List<String>, Object, Short> {
+        @Override
+        protected Short doInBackground(List<String>... params) {
+            try {
+                url=sourceUrl+params[0].get(0)+".jpg";
+                myFileUrl = new URL(url);
+                HttpURLConnection conn = (HttpURLConnection) myFileUrl.openConnection();
+                conn.setConnectTimeout(0);
+                conn.setDoInput(true);
+                conn.connect();
+                InputStream is = conn.getInputStream();
+                Thread.sleep(2000);
+                bitmap = BitmapFactory.decodeStream(is);
+                is.close();
+                Log.i("更新函数执行","ohohoho"+url);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return 0;
+            }
+            //获取完成后发送
+            //EventBus.getDefault().postSticky(myInfo);
+            return 1;
+        }
+
+        @Override
+        protected void onPostExecute(Short state) {
+            if(state==1){
+                outImageView.setImageBitmap(bitmap);
+            }
+        }
+
+    }
 }

@@ -159,7 +159,7 @@ public class AvatarFragment extends SupportFragment {
         @Override
         protected void onPostExecute(Short state) {
             if(state==1){
-                Log.i("更新函数执行","ohohoho");
+                Log.i("更新函数执行","ohohoho"+bitmap.getPixel(25,35)+"");
                 imageView.setImageBitmap(createCircleBitmap(bitmap));
             }
         }

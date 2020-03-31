@@ -29,19 +29,20 @@ public class CustomIncomingImageMessageViewHolder
     private URL myFileUrl = null;
     private Bitmap bitmap = null;
     private String url;
+    private String sourceUrl="http://192.168.1.109:8080/temp-rainy/user_avatar/";
     private String uTitles;
 
     public CustomIncomingImageMessageViewHolder(View itemView, Object payload) {
         super(itemView, payload);
         onlineIndicator = itemView.findViewById(R.id.onlineIndicator);
-        imageView = itemView.findViewById(R.id.image);
+        imageView = itemView.findViewById(R.id.messageUserAvatar);
     }
 
     @Override
     public void onBind(Message message) {
         super.onBind(message);
         List<String> inputList = new ArrayList<String>();
-        inputList.add(message.getImageUrl());
+        inputList.add(message.getUser().getId());
         //new setAvatarTask().execute(inputList);//刷新一次
         boolean isOnline = message.getUser().isOnline();
         if (isOnline) {
@@ -55,7 +56,7 @@ public class CustomIncomingImageMessageViewHolder
         @Override
         protected Short doInBackground(List<String>... params) {
             try {
-                url=params[0].get(0);
+                url=sourceUrl+params[0].get(0)+".jpg";
                 myFileUrl = new URL(url);
                 HttpURLConnection conn = (HttpURLConnection) myFileUrl.openConnection();
                 conn.setConnectTimeout(0);
@@ -65,6 +66,7 @@ public class CustomIncomingImageMessageViewHolder
                 Thread.sleep(2000);
                 bitmap = BitmapFactory.decodeStream(is);
                 is.close();
+                Log.i("更新函数执行","ohohoho"+sourceUrl+params[0].get(0));
             } catch (Exception e) {
                 e.printStackTrace();
                 return 0;
@@ -77,7 +79,7 @@ public class CustomIncomingImageMessageViewHolder
         @Override
         protected void onPostExecute(Short state) {
             if(state==1){
-                Log.i("更新函数执行","ohohoho");
+
                 imageView.setImageBitmap(bitmap);
             }
         }

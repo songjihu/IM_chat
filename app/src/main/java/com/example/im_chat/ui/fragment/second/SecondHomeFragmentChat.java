@@ -354,6 +354,7 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
                     conn.setDoInput(true);
                     conn.connect();
                     InputStream is = conn.getInputStream();
+                    Thread.sleep(500);
                     bitmap = BitmapFactory.decodeStream(is);
                     is.close();
                     addItem.add(new Friend(
@@ -382,6 +383,7 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
                     conn.setDoInput(true);
                     conn.connect();
                     InputStream is = conn.getInputStream();
+                    Thread.sleep(500);
                     bitmap = BitmapFactory.decodeStream(is);
                     is.close();
                     addItem.add(new Friend(
@@ -408,6 +410,7 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
                     Toast.makeText(getActivity(), "更新失败", Toast.LENGTH_SHORT).show();
                     break;
                 case 1:
+                    Log.i("开始更新","123");
                     //if(mAdapter.getItemCount()==0&&addItem.size()>0) mAdapter.addData(addItem.get(0));
                     if(mAdapter.getItemCount()==0) mAdapter.addData(addItem.get(0));
                     boolean found=false;
@@ -426,8 +429,10 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
                                 }
                             }
                             //如果在则更新
-                            if(addItem.get(i).getJid().equals(mAdapter.getItem(j).getJid())&&!addItem.get(i).getOnline().equals(mAdapter.getItem(j).getOnline())){
+                            //if(addItem.get(i).getJid().equals(mAdapter.getItem(j).getJid())&&!addItem.get(i).getOnline().equals(mAdapter.getItem(j).getOnline())){
+                            if(addItem.get(i).getJid().equals(mAdapter.getItem(j).getJid())){
                                 mAdapter.setData(j,addItem.get(i));
+                                Log.i("更新此条",""+i+"  "+addItem.get(i).getAvatar());
                             }
 
                         }
