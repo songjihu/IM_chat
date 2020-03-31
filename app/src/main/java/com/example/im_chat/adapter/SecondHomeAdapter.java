@@ -1,6 +1,5 @@
 package com.example.im_chat.adapter;
 
-import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -10,12 +9,7 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
-import android.support.v4.view.ViewCompat;
-import android.support.v7.widget.RecyclerView;
 import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -24,18 +18,12 @@ import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.chad.library.adapter.base.BaseViewHolder;
 import com.example.im_chat.R;
 import com.example.im_chat.entity.Friend;
-import com.example.im_chat.entity.InvitationInfo;
-import com.example.im_chat.listener.OnItemClickListener;
-import com.example.im_chat.media.data.model.Message;
-import com.example.im_chat.ui.fragment.third.AvatarFragment;
 
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-
-import cn.ljp.swipemenu.SwipeMenuLayout;
 
 /**
  *   联系人列表适配器

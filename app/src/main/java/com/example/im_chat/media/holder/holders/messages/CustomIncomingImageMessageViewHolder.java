@@ -9,7 +9,6 @@ import android.widget.ImageView;
 
 import com.example.im_chat.R;
 import com.example.im_chat.media.data.model.Message;
-import com.example.im_chat.ui.fragment.third.AvatarFragment;
 import com.stfalcon.chatkit.messages.MessageHolders;
 
 import java.io.InputStream;

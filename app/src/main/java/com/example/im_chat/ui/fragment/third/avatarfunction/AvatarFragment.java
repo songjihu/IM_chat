@@ -1,4 +1,4 @@
-package com.example.im_chat.ui.fragment.third;
+package com.example.im_chat.ui.fragment.third.avatarfunction;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -7,14 +7,11 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 
 import android.support.annotation.Nullable;
 
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -34,10 +31,8 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 
 import java.util.ArrayList;

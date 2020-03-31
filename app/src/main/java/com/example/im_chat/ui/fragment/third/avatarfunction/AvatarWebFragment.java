@@ -1,71 +1,49 @@
-package com.example.im_chat.ui.fragment;
+package com.example.im_chat.ui.fragment.third.avatarfunction;
 import android.annotation.TargetApi;
 import android.app.Fragment;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
-import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.EditText;
 import android.widget.Toast;
 
 import com.example.im_chat.R;
-import com.example.im_chat.db.DaoMaster;
-import com.example.im_chat.db.DaoSession;
-import com.example.im_chat.entity.ChatMessage;
-import com.example.im_chat.entity.MyInfo;
 import com.example.im_chat.entity.SendInfo;
-import com.example.im_chat.helper.MessageTranslateBack;
-import com.example.im_chat.helper.MessageTranslateTo;
-import com.example.im_chat.media.data.model.Message;
-import com.example.im_chat.media.data.model.User;
 import com.example.im_chat.media.holder.CustomHolderMessagesActivity;
 
 import org.greenrobot.eventbus.EventBus;
 
-public class WebFragment extends Fragment {
+public class AvatarWebFragment extends Fragment {
 
     private WebView webView;
     private ValueCallback<Uri> mUploadMessage;
     public ValueCallback<Uri[]> uploadMessage;
     public static final int REQUEST_SELECT_FILE = 100;
     private final static int FILECHOOSER_RESULTCODE = 2;
-    private String user_name;
     private String user_id;
-    private String friend_name;
-    private String friend_id;
-    //private String url="http://123.56.163.211:8080/";
-    private String url="http://192.168.1.109:8080/";
     private String fileCatalog="temp-rainy/";//服务器目录
-    private String sourceUrl="http://192.168.1.109:8080/temp-rainy/user_avatar/";
-    private static DaoSession daoSession;
-
-
+    private String toOpenUrl;
 
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Bundle bundle = this.getArguments();
-        user_name= bundle.getString("fromName");
         user_id= bundle.getString("fromId");
-        friend_name= bundle.getString("toName");
-        friend_id= bundle.getString("toId");
-        initGreenDao();
+        toOpenUrl=bundle.getString("url");
     }
 
     @Override
@@ -76,22 +54,10 @@ public class WebFragment extends Fragment {
         return view;
     }
 
-    private void initGreenDao() {
-        DaoMaster.DevOpenHelper helper = new DaoMaster.DevOpenHelper(getActivity(), "aserbao.db");
-        SQLiteDatabase db = helper.getWritableDatabase();
-        DaoMaster daoMaster = new DaoMaster(db);
-        daoSession = daoMaster.newSession();
-    }
-
     private void initView(View view) {
+
         webView = view.findViewById(R.id.webView);
-        webView.setWebViewClient(new WebViewClient(){
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                view.loadUrl(url);
-                return true;
-            }
-        });
+
         WebSettings webSettings = webView.getSettings();
         webSettings.setAllowFileAccess(true);//设置启用或禁止访问文件数据
         webSettings.setDomStorageEnabled(true);
@@ -100,8 +66,15 @@ public class WebFragment extends Fragment {
         webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
         webSettings.setLoadsImagesAutomatically(true);
 
-        webView.loadUrl(url+"file");
+        webView.postDelayed(new Runnable(){
+            @Override
+            public void run(){
+                webView.loadUrl(toOpenUrl);
+                webView.addJavascriptInterface(new JsInterface(getActivity()), "AndroidWebView");
+            }
+        },0);
 
+        Log.i("oncrate","---run"+toOpenUrl);
         webView.setWebChromeClient(new WebChromeClient(){
 
             // For 3.0+ Devices (Start)
@@ -118,7 +91,7 @@ public class WebFragment extends Fragment {
 
             // For Lollipop 5.0+ Devices
             @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-            public boolean onShowFileChooser(WebView mWebView, ValueCallback<Uri[]> filePathCallback, WebChromeClient.FileChooserParams fileChooserParams)
+            public boolean onShowFileChooser(WebView mWebView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams)
             {
                 if (uploadMessage != null) {
                     uploadMessage.onReceiveValue(null);
@@ -160,9 +133,11 @@ public class WebFragment extends Fragment {
             }
 
         });
+        Log.i("oncrate11111","---run");
 
         //在js中调用本地java方法
-        webView.addJavascriptInterface(new JsInterface(getActivity()), "AndroidWebView");
+
+        Log.i("oncrate22222","---run");
 
     }
 
@@ -176,41 +151,35 @@ public class WebFragment extends Fragment {
         @JavascriptInterface
         public void showInfoFromJs(final String name) {
             //确定文件可用后得到返回值
-            //Toast.makeText(mContext, name, Toast.LENGTH_SHORT).show();
-            webView.post(new Runnable(){
-                @Override
-                public void run(){
-                    //String str = "dfjkgnosudf b";
-                    //webView.loadUrl("javascript:showInfoFromJava('" +str+ "')");
-                    String msg = user_id+":"+user_name+":"+friend_id+":"+friend_name+":"+name;//组合为一条发送
-                    //调用js中的函数：showInfoFromJava(msg)
-                    webView.loadUrl("javascript:showInfoFromJava('" + msg + "')");
-                }
-            });
-            SendInfo sendInfo=new SendInfo();
-            sendInfo.setUserId(user_id);
-            sendInfo.setUserName(user_name);
-            sendInfo.setFriendId(friend_id);
-            sendInfo.setFriendName(friend_name);
-            sendInfo.setMsg(url+fileCatalog+name);//发送图片位置
-            //将图片消息加入本地数据库
-            MessageTranslateTo helper=new MessageTranslateTo(user_name,user_id,friend_id,sendInfo.getMsg(),"img");
-            User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),sourceUrl+helper.getMsgFromId()+".jpg",true);
-            MessageTranslateBack helper1=new MessageTranslateBack(helper.getMsgJson());
-            Log.i("2发送222222222222222",helper.getMsgJson());
-            Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper1.getMsgDate());
-            message.setImage(new Message.Image(sendInfo.getMsg()));
-            ChatMessage chat_msg =new ChatMessage(null,(String) helper.getMsgJson());
-            //daoSession.insert(chat_msg);
-            Log.i("数据库加入++++++",(String) helper.getMsgJson());
-            EventBus.getDefault().postSticky(sendInfo);
+            if(name.equals("修改成功")){
+                Toast.makeText(mContext, name, Toast.LENGTH_SHORT).show();
+                //发送消息，更新头像
+                SendInfo sendInfo=new SendInfo();
+                sendInfo.setUserId(user_id);
+                sendInfo.setMsg("update_avatar");//发送图片位置
+                EventBus.getDefault().postSticky(sendInfo);
+            }
+            else {
+                webView.post(new Runnable(){
+                    @Override
+                    public void run(){
+                        String msg = user_id;//组合为一条发送
+                        Log.i("给前端发送了",msg);
+                        //调用js中的函数：showInfoFromJava(msg)
+                        webView.loadUrl("javascript:showInfoFromJava('" + msg + "')");
+                    }
+                });
+
+            }
+
+
 
         }
     }
 
     //在java中调用js代码
-    public void sendInfoToJs(View view) {
-        String msg = user_id+":"+user_name+":"+friend_id+":"+friend_name;//组合为一条发送
+    public void sendInfoToJs(View veiw) {
+        String msg = user_id;//组合为一条发送
         //调用js中的函数：showInfoFromJava(msg)
         webView.loadUrl("javascript:showInfoFromJava('" + msg + "')");
     }
@@ -246,8 +215,29 @@ public class WebFragment extends Fragment {
 
     @Override
     public void onPause() {
+        //webView=null;
         super.onPause();
     }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (webView != null) {
+            ViewParent parent = webView.getParent();
+            if (parent != null) {
+                ((ViewGroup) parent).removeView(webView);
+            }
+            webView.stopLoading();
+            // 退出时调用此方法，移除绑定的服务，否则某些特定系统会报错
+            webView.getSettings().setJavaScriptEnabled(false);
+            webView.clearHistory();
+            webView.clearView();
+            webView.removeAllViews();
+            webView.destroy();
+            webView = null;
+        }
+    }
+
 
 
 

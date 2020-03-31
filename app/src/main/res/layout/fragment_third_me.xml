@@ -26,5 +26,19 @@
             android:paddingLeft="16dp"
             android:drawableRight="@drawable/fragmentation_ic_right"
             android:paddingRight="16dp"/>
+        <TextView
+            android:id="@+id/tv_btn_file_receive"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:gravity="center_vertical"
+            android:text="@string/file_receive"
+            android:textColor="@color/gray_dark"
+            android:drawablePadding="16dp"
+            android:textSize="16sp"
+            android:background="?attr/selectableItemBackground"
+            android:drawableLeft="@drawable/ic_third_file"
+            android:paddingLeft="16dp"
+            android:drawableRight="@drawable/fragmentation_ic_right"
+            android:paddingRight="16dp"/>
     </LinearLayout>
 </FrameLayout>

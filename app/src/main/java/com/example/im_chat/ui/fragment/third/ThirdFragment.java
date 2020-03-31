@@ -11,6 +11,8 @@ import android.view.ViewGroup;
 
 import com.example.im_chat.R;
 import com.example.im_chat.base.BaseMainFragment;
+import com.example.im_chat.ui.fragment.third.avatarfunction.AvatarFragment;
+import com.example.im_chat.ui.fragment.third.invitationfunction.MeFragment;
 
 
 /**

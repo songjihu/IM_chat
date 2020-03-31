@@ -1,4 +1,4 @@
-package com.example.im_chat.ui.fragment.third;
+package com.example.im_chat.ui.fragment.third.filefunction;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -7,9 +7,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-
 import com.example.im_chat.R;
-import com.example.im_chat.ui.fragment.first.FirstHomeFragmentChat;
+import com.example.im_chat.ui.fragment.third.invitationfunction.FriendInvitationFragment;
+import com.example.im_chat.ui.fragment.third.ThirdFragment;
 
 import me.yokeyword.fragmentation.SupportFragment;
 
@@ -19,14 +19,14 @@ import me.yokeyword.fragmentation.SupportFragment;
  * @auther songjihu
  * @since 2020/2/13 15:46
  */
-public class MeFragment extends SupportFragment {
+public class FileFragment extends SupportFragment {
     private TextView mTvBtnSettings;
 
-    public static MeFragment newInstance() {
+    public static FileFragment newInstance() {
 
         Bundle args = new Bundle();
 
-        MeFragment fragment = new MeFragment();
+        FileFragment fragment = new FileFragment();
         fragment.setArguments(args);
         return fragment;
     }
@@ -34,17 +34,17 @@ public class MeFragment extends SupportFragment {
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_third_me, container, false);
+        View view = inflater.inflate(R.layout.fragment_third_file, container, false);
         initView(view);
         return view;
     }
 
     private void initView(View view) {
-        mTvBtnSettings = (TextView) view.findViewById(R.id.tv_btn_friend_invitation);
+        mTvBtnSettings = (TextView) view.findViewById(R.id.tv_btn_file_receive);
         mTvBtnSettings.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                start(FriendInvitationFragment.newInstance());
+                start(FriendFileFragment.newInstance());
             }
         });
     }

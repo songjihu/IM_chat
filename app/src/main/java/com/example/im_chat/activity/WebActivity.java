@@ -3,25 +3,17 @@ package com.example.im_chat.activity;
 import android.app.Activity;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
-import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.KeyEvent;
 
 import com.example.im_chat.R;
-import com.example.im_chat.entity.MyInfo;
 import com.example.im_chat.entity.SendInfo;
 import com.example.im_chat.other.JID;
-import com.example.im_chat.ui.fragment.third.AvatarFragment;
-import com.example.im_chat.ui.fragment.third.AvatarWebFragment;
+import com.example.im_chat.ui.fragment.third.avatarfunction.AvatarWebFragment;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-
-import java.util.ArrayList;
-import java.util.List;
 
 import me.yokeyword.eventbusactivityscope.EventBusActivityScope;
 

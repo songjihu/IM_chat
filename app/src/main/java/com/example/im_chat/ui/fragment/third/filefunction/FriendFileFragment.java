@@ -1,4 +1,4 @@
-package com.example.im_chat.ui.fragment.third;
+package com.example.im_chat.ui.fragment.third.filefunction;
 
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -13,19 +13,16 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
-
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.example.im_chat.R;
-
+import com.example.im_chat.adapter.FileItemAdapter;
 import com.example.im_chat.adapter.InvItemAdapter;
+import com.example.im_chat.entity.FileReceiveInfo;
 
-
-import com.example.im_chat.entity.InvitationInfo;
 import com.example.im_chat.entity.MyInfo;
 import com.example.im_chat.other.JID;
 import com.example.im_chat.utils.JDBCUtils;
 import com.example.im_chat.utils.MyXMPPTCPConnectionOnLine;
-
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -48,28 +45,27 @@ import me.yokeyword.fragmentation.SupportFragment;
 
 
 /**
- *   处理好友请求的fragment
+ *   处理好友发送文件fragment
  * @auther songjihu
- * @since 2020/2/13 15:57
+ * @since 2020/3/31 16:07
  */
-public class FriendInvitationFragment extends SupportFragment {
+public class FriendFileFragment extends SupportFragment {
     private Toolbar mToolbar;
     private RecyclerView recyclerView;//好友申请列表
-    private List<InvitationInfo> InvitationList=new ArrayList<>();//list存储信息集合
+    private List<FileReceiveInfo> fileList=new ArrayList<>();//list存储信息集合
     private Handler handler;//更新界面
-    private InvItemAdapter  mAdapter;//配置适配器
+    private FileItemAdapter mAdapter;//配置适配器
     private String uTitles;//用户jid
     private String uTitles_name;//用户姓名
-    private MyXMPPTCPConnectionOnLine connection;
     private Calendar calendar = Calendar.getInstance();//获取时间
-    private InvitationInfo addItem;//被加入项
+    private FileReceiveInfo addItem;//被加入项
     private CountDownLatch countDownLatch = new CountDownLatch(1);//pv操作量
 
 
 
-    public static FriendInvitationFragment newInstance() {
+    public static FriendFileFragment newInstance() {
 
-        FriendInvitationFragment fragment = new FriendInvitationFragment();
+        FriendFileFragment fragment = new FriendFileFragment();
         return fragment;
     }
 
@@ -87,6 +83,7 @@ public class FriendInvitationFragment extends SupportFragment {
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_third_friend_invitation, container, false);
         EventBus.getDefault().register(this);
+        Log.i("attention","创建文件接收fragment");
         initView(view);
         return view;
     }
@@ -103,8 +100,8 @@ public class FriendInvitationFragment extends SupportFragment {
                 boolean flg = false;
                 while(!flg){
                     try {
-                        serachInvi(uTitles);
-                        Log.i("111111:",InvitationList.size()+"");
+                        serachFile(uTitles);
+                        Log.i("111111:",fileList.size()+"");
                         Thread.sleep(5000);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
@@ -128,16 +125,16 @@ public class FriendInvitationFragment extends SupportFragment {
             recyclerView.setLayoutManager(manager);//循环显示的多个item的布局管理
             //List<String> mShowItems = new ArrayList<>();
             //mShowItems.add("123");
-            mAdapter = new InvItemAdapter(InvitationList);       //定义item的适配器
+            mAdapter = new FileItemAdapter(fileList);       //定义item的适配器
             recyclerView.setAdapter(mAdapter);
             mAdapter.setOnItemChildClickListener(new BaseQuickAdapter.OnItemChildClickListener() {
                 @Override
                 public void onItemChildClick(BaseQuickAdapter adapter, View view, int position) {
-                    if (view.getId() == R.id.tv_menu1) {
+                    if (view.getId() == R.id.tv_menu1_file) {
                         //Log.d("======", "点击菜单1   " + (++index));
                         //handler.post(remove);
                         //adapter.setNewData(InvitationInfo);
-                        InvitationInfo t= (InvitationInfo) adapter.getItem(position);
+                        FileReceiveInfo t= (FileReceiveInfo) adapter.getItem(position);
                         if (t != null) {
                             attemptAccept(t.getFromJid(),uTitles,"","friend");
                             adapter.remove(position);
@@ -145,7 +142,7 @@ public class FriendInvitationFragment extends SupportFragment {
 
                     } else {
                         //Log.d("======", "点击菜单2   ");
-                        InvitationInfo t= (InvitationInfo) adapter.getItem(position);
+                        FileReceiveInfo t= (FileReceiveInfo) adapter.getItem(position);
                         if (t != null) {
                             attemptReject(t.getFromJid(),uTitles,"","friend");
                             adapter.remove(position);
@@ -169,8 +166,8 @@ public class FriendInvitationFragment extends SupportFragment {
 
 
     //搜索邀请列表
-    private List<InvitationInfo> serachInvi(final String inputStr){
-        final List<InvitationInfo> friends = new ArrayList<InvitationInfo>();//建立新的list
+    private List<FileReceiveInfo> serachFile(final String inputStr){
+        final List<FileReceiveInfo> friends = new ArrayList<FileReceiveInfo>();//建立新的list
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -178,27 +175,20 @@ public class FriendInvitationFragment extends SupportFragment {
                     Log.i("22342432","1");
                     boolean flag=false;
                     Connection cn= JDBCUtils.getConnection();
-                    String sql="SELECT * FROM `friendlist`WHERE fjid = '"+ JID.unescapeNode(inputStr)+"'AND accepted ='0'";//
+                    String sql="SELECT * FROM `filelist`WHERE fjid = '"+ JID.unescapeNode(inputStr)+"'AND accepted ='0'";//
                     Statement st=(Statement)cn.createStatement();
                     ResultSet rs=st.executeQuery(sql);
                     while(rs.next()){
                         flag=true;
                         if(!isIn(rs.getString("jid"))){
                             //若不在则添加
-                            addItem=new InvitationInfo( rs.getString("more"),
+                            addItem=new FileReceiveInfo( rs.getString("more"),
                                                                  rs.getString("jid"),
                                                                  rs.getString("send_name"),
                                                                  rs.getString("send_time"));
                             handler.post(runnableAdd);//更新界面
                             //InvitationList.add(addItem);
                         }
-                        //mAdapter.addData(rs.getString("send_name")+"(jid:"+rs.getString("jid")+")");
-                        //Toast.makeText(getContext(), "add"+rs.getString("send_name"), Toast.LENGTH_SHORT).show();
-                    }
-                    if(!flag){
-                        //Looper.prepare();
-                        //Toast.makeText(getContext(), "未收到好友请求", Toast.LENGTH_SHORT).show();
-                        //Looper.loop();
                     }
                     JDBCUtils.close(rs,st,cn);
 
@@ -215,9 +205,9 @@ public class FriendInvitationFragment extends SupportFragment {
 
     //是否已在列表中
     private boolean isIn(String str){
-        for(int i=0;i<InvitationList.size();i++)
+        for(int i=0;i<fileList.size();i++)
         {
-            if(str.equals(InvitationList.get(i).getFromJid())){
+            if(str.equals(fileList.get(i).getFromJid())){
                 return true;
             }
         }
@@ -244,10 +234,6 @@ public class FriendInvitationFragment extends SupportFragment {
         new RejectTask().execute(List);
     }
 
-    //初始化连接
-    private void initXMPPTCPConnection(){
-        connection = MyXMPPTCPConnectionOnLine.getInstance();
-    }
 
 
 
@@ -257,36 +243,32 @@ public class FriendInvitationFragment extends SupportFragment {
         //此次连接登录服务器为离线状态
         @Override
         protected Short doInBackground(List<String>... params) {
-            initXMPPTCPConnection();
-            if(connection.isConnected()) {
-                try {
-                    String jid=params[0].get(0);
-                    String fjid=params[0].get(1);
-                    String nickName=params[0].get(2);
-                    String groupName=params[0].get(3);
-                    addFriend(JID.escapeNode(jid), nickName,groupName);//openfire添加好友
-                    int year = calendar.get(Calendar.YEAR);
-                    int month = calendar.get(Calendar.MONTH)+1;
-                    int day = calendar.get(Calendar.DAY_OF_MONTH);
-                    int hour = calendar.get(Calendar.HOUR_OF_DAY);
-                    int minute = calendar.get(Calendar.MINUTE);
-                    Connection cn= JDBCUtils.getConnection();//更新数据库表
-                    Log.i("13234",jid+"==="+fjid);
-                    String t=year+"-"+month+"-"+day+" "+hour+":"+minute;
-                    String sql = "update friendlist set accepted ='1' ,accept_time= '"+t+"', accept_name='"+uTitles_name+ "' where jid = '"+JID.unescapeNode(jid)+"' and fjid = '"+JID.unescapeNode(fjid)+"'";
-                    PreparedStatement pstm = cn.prepareStatement(sql);
-                    //执行更新数据库
-                    pstm.executeUpdate();
-                    //关闭访问
-                    pstm.close();
-                    cn.close();
-                    return 1;
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    return 2;
-                }
+            try {
+                String jid=params[0].get(0);
+                String fjid=params[0].get(1);
+                String nickName=params[0].get(2);
+                String groupName=params[0].get(3);
+                addFriend(JID.escapeNode(jid), nickName,groupName);//openfire添加好友
+                int year = calendar.get(Calendar.YEAR);
+                int month = calendar.get(Calendar.MONTH)+1;
+                int day = calendar.get(Calendar.DAY_OF_MONTH);
+                int hour = calendar.get(Calendar.HOUR_OF_DAY);
+                int minute = calendar.get(Calendar.MINUTE);
+                Connection cn= JDBCUtils.getConnection();//更新数据库表
+                Log.i("13234",jid+"==="+fjid);
+                String t=year+"-"+month+"-"+day+" "+hour+":"+minute;
+                String sql = "update filelist set accepted ='1' ,accept_time= '"+t+"', accept_name='"+uTitles_name+ "' where jid = '"+JID.unescapeNode(jid)+"' and fjid = '"+JID.unescapeNode(fjid)+"'";
+                PreparedStatement pstm = cn.prepareStatement(sql);
+                //执行更新数据库
+                pstm.executeUpdate();
+                //关闭访问
+                pstm.close();
+                cn.close();
+                return 1;
+            } catch (SQLException e) {
+                e.printStackTrace();
+                return 2;
             }
-            return 2;
         }
 
         @Override
@@ -313,33 +295,29 @@ public class FriendInvitationFragment extends SupportFragment {
         //此次连接登录服务器为离线状态
         @Override
         protected Short doInBackground(List<String>... params) {
-            initXMPPTCPConnection();
-            if(connection.isConnected()) {
-                try {
-                    String jid=params[0].get(0);
-                    String fjid=params[0].get(1);
-                    int year = calendar.get(Calendar.YEAR);
-                    int month = calendar.get(Calendar.MONTH)+1;
-                    int day = calendar.get(Calendar.DAY_OF_MONTH);
-                    int hour = calendar.get(Calendar.HOUR_OF_DAY);
-                    int minute = calendar.get(Calendar.MINUTE);
-                    Connection cn= JDBCUtils.getConnection();//更新数据库表
-                    Log.i("13234",jid+"==="+fjid);
-                    String t=year+"-"+month+"-"+day+" "+hour+":"+minute;
-                    String sql = "update friendlist set accepted ='2' ,accept_time= '"+t+"' where jid = '"+JID.unescapeNode(jid)+"' and fjid = '"+JID.unescapeNode(fjid)+"'";
-                    PreparedStatement pstm = cn.prepareStatement(sql);
-                    //执行更新数据库
-                    pstm.executeUpdate();
-                    //关闭访问
-                    pstm.close();
-                    cn.close();
-                    return 1;
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    return 2;
-                }
+            try {
+                String jid=params[0].get(0);
+                String fjid=params[0].get(1);
+                int year = calendar.get(Calendar.YEAR);
+                int month = calendar.get(Calendar.MONTH)+1;
+                int day = calendar.get(Calendar.DAY_OF_MONTH);
+                int hour = calendar.get(Calendar.HOUR_OF_DAY);
+                int minute = calendar.get(Calendar.MINUTE);
+                Connection cn= JDBCUtils.getConnection();//更新数据库表
+                Log.i("13234",jid+"==="+fjid);
+                String t=year+"-"+month+"-"+day+" "+hour+":"+minute;
+                String sql = "update friendlist set accepted ='2' ,accept_time= '"+t+"' where jid = '"+JID.unescapeNode(jid)+"' and fjid = '"+JID.unescapeNode(fjid)+"'";
+                PreparedStatement pstm = cn.prepareStatement(sql);
+                //执行更新数据库
+                pstm.executeUpdate();
+                //关闭访问
+                pstm.close();
+                cn.close();
+                return 1;
+            } catch (SQLException e) {
+                e.printStackTrace();
+                return 2;
             }
-            return 2;
         }
 
         @Override
@@ -363,15 +341,6 @@ public class FriendInvitationFragment extends SupportFragment {
     //添加好友
     private boolean addFriend(String jid, String nickName, String groupName) {
         jid=jid+"@123.56.163.211";
-        if(connection.isConnected()) {
-            try {
-                Roster.getInstanceFor(connection).createEntry(jid, nickName, new String[]{groupName});
-                return true;
-            } catch (SmackException.NotLoggedInException | SmackException.NoResponseException | XMPPException.XMPPErrorException
-                    | SmackException.NotConnectedException e) {
-                return false;
-            }
-        }
         throw new NullPointerException("服务器连接失败，请先连接服务器");
     }
 

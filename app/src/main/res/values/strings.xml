@@ -12,4 +12,5 @@
     <string name="friend_invitation">好友请求</string>
     <string name="me">我</string>
     <string name="listisempty">请求列表为空</string>
+    <string name="file_receive">文件接收</string>
 </resources>
