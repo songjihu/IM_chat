@@ -12,6 +12,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -37,6 +38,7 @@ import com.example.im_chat.media.holder.holders.messages.OutcomingVoiceMessageVi
 import com.example.im_chat.other.JID;
 import com.example.im_chat.ui.fragment.other.WebFragment;
 import com.example.im_chat.utils.AppUtils;
+import com.example.im_chat.utils.JDBCUtils;
 import com.example.im_chat.utils.MyXMPPTCPConnectionOnLine;
 import com.stfalcon.chatkit.messages.MessageHolders;
 import com.stfalcon.chatkit.messages.MessageInput;
@@ -54,7 +56,10 @@ import org.jivesoftware.smack.chat.ChatMessageListener;
 
 import java.io.IOException;
 import java.net.URL;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 import me.yokeyword.eventbusactivityscope.EventBusActivityScope;
@@ -84,7 +89,6 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
     private static String user_id;
     private String friend_name;
     private String friend_id;
-    private List<String> inputList = new ArrayList<String>();
     private String uTitles;
     private String uTitles_name;
     private String latestJson;
@@ -140,7 +144,12 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
             String toId= data.getUserId();
             String toName=data.getUserName();
             String msg=data.getMsg();
-            sendChatMessage(msg,"img");
+            if(data.getType().equals("img")){
+                sendChatMessage(msg,"img");
+            }
+            if(data.getType().equals("file")){
+                sendChatMessage(msg,"file");
+            }
         }
 
     }
@@ -384,14 +393,28 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
                 user,//用户
                 helper.getMsgContent(),//内容
                 helper1.getMsgDate());//时间
+        //更新列表并加入本地数据库
         if(type.equals("img")) {
             message.setImage(new Message.Image(msgContent));
-        }
-        //if(type.equals("text")) {
             ChatMessage chat_msg =new ChatMessage(null,(String) helper.getMsgJson());
             daoSession.insert(chat_msg);
             Log.i("数据库加入++++++",(String) helper.getMsgJson());
             messagesAdapter.addToStart(message,true);//加入下方列表
+        }
+        if(type.equals("text")) {
+            ChatMessage chat_msg =new ChatMessage(null,(String) helper.getMsgJson());
+            daoSession.insert(chat_msg);
+            Log.i("数据库加入++++++",(String) helper.getMsgJson());
+            messagesAdapter.addToStart(message,true);//加入下方列表
+        }
+        //加入云端数据库
+        if(type.equals("file")) {
+            List<String> inputList = new ArrayList<String>();
+            inputList.add(msgContent);//url id
+            new sendFileTask().execute(inputList);
+            return;
+        }
+
         if(type.equals("img")) {
             //用一个线程去更新图片
             List<String> inputList = new ArrayList<String>();
@@ -465,6 +488,56 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
                 messagesAdapter.update(messageToUpdate.getId(),messageToUpdate);
                 //imageView.setImageBitmap(bitmap);
                 //textView.setText("");
+            }
+        }
+
+    }
+
+    private class sendFileTask extends AsyncTask<List<String>, Object, Short> {
+        @Override
+        protected Short doInBackground(List<String>... params) {
+            try {
+                Thread.sleep(1000);
+                String friendJid = friend_id;
+                String friendName = friend_name;
+                Connection cn= JDBCUtils.getConnection();
+                String sql = "insert into filelist (jid,fjid,send_time,accept_time,send_name,more,more_name) values (?,?,?,?,?,?,?);";
+                PreparedStatement pstm = cn.prepareStatement(sql);
+                //通过setString给4个问好赋值，下面的course_id，user_id，course_time，us_job_id都是已有值的变量，不要误会了
+                pstm.setString(1, user_id);//发送者id
+                pstm.setString(2, friend_id);//接收者id
+                Calendar calendar = Calendar.getInstance();//获取时间
+                int year = calendar.get(Calendar.YEAR);
+                int month = calendar.get(Calendar.MONTH)+1;
+                int day = calendar.get(Calendar.DAY_OF_MONTH);
+                int hour = calendar.get(Calendar.HOUR_OF_DAY);
+                int minute = calendar.get(Calendar.MINUTE);
+                pstm.setString(3, year+"-"+month+"-"+day+" "+hour+":"+minute);//发送时间
+                pstm.setString(4, "");//接受时间
+                pstm.setString(5, user_name);//发送姓名
+                String file_name=params[0].get(0).split(":")[params[0].get(0).split(":").length-1];
+                String file_path=params[0].get(0).split(":"+file_name)[0];
+                pstm.setString(6, file_name);//发送文件名
+                pstm.setString(7, file_path);//发送服务器路径
+                //执行更新数据库
+                pstm.executeUpdate();
+                //关闭访问
+                pstm.close();cn.close();
+                //Toast.makeText(getBaseContext(),"文件已经发送", Toast.LENGTH_SHORT).show();
+                //Looper.loop();//增加部分
+            } catch (Exception e) {
+                e.printStackTrace();
+                return 0;
+            }
+            //获取完成后发送
+            //EventBus.getDefault().postSticky(myInfo);
+            return 1;
+        }
+
+        @Override
+        protected void onPostExecute(Short state) {
+            if(state==1){
+                Log.i("文件","发送成功");
             }
         }
 

@@ -20,9 +20,11 @@ import com.example.im_chat.R;
 import com.example.im_chat.adapter.InvItemAdapter;
 
 
+import com.example.im_chat.entity.FileReceiveInfo;
 import com.example.im_chat.entity.InvitationInfo;
 import com.example.im_chat.entity.MyInfo;
 import com.example.im_chat.other.JID;
+import com.example.im_chat.ui.fragment.third.filefunction.FriendFileFragment;
 import com.example.im_chat.utils.JDBCUtils;
 import com.example.im_chat.utils.MyXMPPTCPConnectionOnLine;
 
@@ -92,7 +94,7 @@ public class FriendInvitationFragment extends SupportFragment {
     }
 
     private void initView(View view) {
-        mToolbar = (Toolbar) view.findViewById(R.id.toolbarSettings);
+        mToolbar = (Toolbar) view.findViewById(R.id.toolbarSettings_inv);
         recyclerView=view.findViewById(R.id.recyclerView_inv);
         handler=new Handler();//创建属于主线程的handler
         handler.post(runnableUi);
@@ -103,7 +105,8 @@ public class FriendInvitationFragment extends SupportFragment {
                 boolean flg = false;
                 while(!flg){
                     try {
-                        serachInvi(uTitles);
+                        //serachInvi(uTitles);
+                        new refreshTask().execute();
                         Log.i("111111:",InvitationList.size()+"");
                         Thread.sleep(5000);
                     } catch (InterruptedException e) {
@@ -211,6 +214,75 @@ public class FriendInvitationFragment extends SupportFragment {
         //mAdapter.setNewData(friends);
         return friends;
 
+    }
+
+    private class refreshTask extends AsyncTask<List<String>, Object, Short> {
+        private List<InvitationInfo> addItem=new ArrayList<>();//被加入项
+        @Override
+        protected Short doInBackground(List<String>... params) {
+            try {
+                Log.i("22342432","1");
+                boolean flag=false;
+                Connection cn= JDBCUtils.getConnection();
+                String sql="SELECT * FROM `friendlist`WHERE fjid = '"+ JID.unescapeNode(uTitles)+"'AND accepted ='0'";//
+                Statement st=(Statement)cn.createStatement();
+                ResultSet rs=st.executeQuery(sql);
+                while(rs.next()){
+                    flag=true;
+                    if(!isIn(rs.getString("jid"))){
+                        //若不在则添加
+                        addItem.add(new InvitationInfo( rs.getString("more"),
+                                rs.getString("jid"),
+                                rs.getString("send_name"),
+                                rs.getString("send_time")));
+                        //handler.post(runnableAdd);//更新界面
+                        //InvitationList.add(addItem);
+                    }
+                    //mAdapter.addData(rs.getString("send_name")+"(jid:"+rs.getString("jid")+")");
+                    //Toast.makeText(getContext(), "add"+rs.getString("send_name"), Toast.LENGTH_SHORT).show();
+                }
+                JDBCUtils.close(rs,st,cn);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                return 0;
+            }
+
+            return 1;
+        }
+
+        @Override
+        protected void onPostExecute(Short state) {
+            switch (state){
+                case 0:
+                    Toast.makeText(getActivity(), "更新失败", Toast.LENGTH_SHORT).show();
+                    break;
+                case 1:
+                    Log.i("开始更新","123");
+                    //if(mAdapter.getItemCount()==0&&addItem.size()>0) mAdapter.addData(addItem.get(0));
+                    if(addItem.size()!=0){
+                        if(mAdapter.getItemCount()==0) mAdapter.addData(addItem.get(0));
+                        boolean found=false;
+                        for(int i=0;i<addItem.size();i++){
+                            for(int j=0;j<mAdapter.getItemCount();j++){
+                                //如果不在则插入
+                                if(!isIn(addItem.get(i).getFromJid())){
+                                    mAdapter.addData(addItem.get(i));
+                                }
+
+                            }
+                        }
+                    }
+                    else {
+                        //Toast.makeText(getActivity(), "暂无文件", Toast.LENGTH_SHORT).show();
+                    }
+
+                    //Toast.makeText(getActivity(), "更新成功", Toast.LENGTH_SHORT).show();
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 
     //是否已在列表中

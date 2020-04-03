@@ -17,18 +17,21 @@ public class FileItemAdapter extends BaseQuickAdapter<FileReceiveInfo, BaseViewH
 
 
     public FileItemAdapter(List<FileReceiveInfo> mShowItems) {
-        super(R.layout.file_item, mShowItems);
+        super(R.layout.inv_item, mShowItems);
     }
 
     @Override
     protected void convert(BaseViewHolder helper, FileReceiveInfo item) {
-        SwipeMenuLayout mSwipe = helper.getView(R.id.swipe_menu_layout_file);
+        SwipeMenuLayout mSwipe = helper.getView(R.id.swipe_menu_layout);
         int position = helper.getLayoutPosition();
         mSwipe.setEnableLeftMenu(false);
         String text = "收到来自 "+item.getFromName()+" 的文件："+item.getBeizhu();
         mSwipe.setOpenChoke(false);
-        ((TextView) helper.getView(R.id.tv_content_file)).setText(text);
-        helper.addOnClickListener(R.id.tv_menu1_file).addOnClickListener(R.id.tv_menu2_file);
+        ((TextView) helper.getView(R.id.tv_content)).setText(text);
+        helper.addOnClickListener(R.id.tv_menu1).addOnClickListener(R.id.tv_menu2);
+        ((TextView)helper.getView(R.id.tv_menu1)).setText("下载");
+        ((TextView)helper.getView(R.id.tv_menu2)).setText("忽略");
+
     }
 
 }

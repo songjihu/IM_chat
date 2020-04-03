@@ -47,10 +47,20 @@ public class SendInfo {
         this.msg = msg;
     }
 
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+
     private String userId;//用户id
     private String userName;//用户名
     private String friendId;//接收id
     private String friendName;//接收name
     private String msg;//消息内容
+    private String type;//消息类型
 
 }

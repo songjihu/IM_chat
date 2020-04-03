@@ -183,6 +183,7 @@ public class WebFragment extends Fragment {
                     //String str = "dfjkgnosudf b";
                     //webView.loadUrl("javascript:showInfoFromJava('" +str+ "')");
                     String msg = user_id+":"+user_name+":"+friend_id+":"+friend_name+":"+name;//组合为一条发送
+                    Log.i("向web传输",msg);
                     //调用js中的函数：showInfoFromJava(msg)
                     webView.loadUrl("javascript:showInfoFromJava('" + msg + "')");
                 }
@@ -192,18 +193,38 @@ public class WebFragment extends Fragment {
             sendInfo.setUserName(user_name);
             sendInfo.setFriendId(friend_id);
             sendInfo.setFriendName(friend_name);
-            sendInfo.setMsg(url+fileCatalog+name);//发送图片位置
-            //将图片消息加入本地数据库
-            MessageTranslateTo helper=new MessageTranslateTo(user_name,user_id,friend_id,sendInfo.getMsg(),"img");
-            User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),sourceUrl+helper.getMsgFromId()+".jpg",true);
-            MessageTranslateBack helper1=new MessageTranslateBack(helper.getMsgJson());
-            Log.i("2发送222222222222222",helper.getMsgJson());
-            Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper1.getMsgDate());
-            message.setImage(new Message.Image(sendInfo.getMsg()));
-            ChatMessage chat_msg =new ChatMessage(null,(String) helper.getMsgJson());
-            //daoSession.insert(chat_msg);
-            Log.i("数据库加入++++++",(String) helper.getMsgJson());
-            EventBus.getDefault().postSticky(sendInfo);
+            if(name.split(":")[1].equals("img")){
+                sendInfo.setType("img");
+                sendInfo.setMsg(url+fileCatalog+name.split(":")[0]);//发送图片位置
+                //将图片消息加入本地数据库
+                MessageTranslateTo helper=new MessageTranslateTo(user_name,user_id,friend_id,sendInfo.getMsg(),"img");
+                //User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),sourceUrl+helper.getMsgFromId()+".jpg",true);
+                User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),sourceUrl+helper.getMsgFromId()+".jpg",true);
+                MessageTranslateBack helper1=new MessageTranslateBack(helper.getMsgJson());
+                Log.i("2发送222222222222222",helper.getMsgJson());
+                Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper1.getMsgDate());
+                message.setImage(new Message.Image(sendInfo.getMsg()));
+                ChatMessage chat_msg =new ChatMessage(null,(String) helper.getMsgJson());
+                //daoSession.insert(chat_msg);
+                Log.i("数据库加入++++++",(String) helper.getMsgJson());
+                EventBus.getDefault().postSticky(sendInfo);
+            }
+            if(name.split(":")[1].equals("file")){
+                sendInfo.setType("file");
+                sendInfo.setMsg(url+fileCatalog+"user_file/"+name.split(":")[0]+":"+name.split(":")[2]);//发送文件位置和真正的名字
+                //将图片消息加入本地数据库
+                MessageTranslateTo helper_file=new MessageTranslateTo(user_name,user_id,friend_id,sendInfo.getMsg(),"file");
+                User user = new User(helper_file.getMsgFromId(),helper_file.getMsgFrom(),sourceUrl+helper_file.getMsgFromId()+".jpg",true);
+                MessageTranslateBack helper1=new MessageTranslateBack(helper_file.getMsgJson());
+                Log.i("2发送222222222222222",helper_file.getMsgJson());
+                Message message = new Message(helper_file.getMsgFrom(),user,helper_file.getMsgContent(),helper1.getMsgDate());
+                message.setImage(new Message.Image(sendInfo.getMsg()));
+                ChatMessage chat_msg =new ChatMessage(null,(String) helper_file.getMsgJson());
+                //daoSession.insert(chat_msg);
+                Log.i("数据库加入++++++",(String) helper_file.getMsgJson());
+                EventBus.getDefault().postSticky(sendInfo);
+            }
+
 
         }
     }

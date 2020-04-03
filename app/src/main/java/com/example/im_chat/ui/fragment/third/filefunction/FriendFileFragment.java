@@ -1,5 +1,8 @@
 package com.example.im_chat.ui.fragment.third.filefunction;
 
+import android.content.Intent;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -15,13 +18,16 @@ import android.widget.Toast;
 
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.example.im_chat.R;
+import com.example.im_chat.activity.WebActivity;
 import com.example.im_chat.adapter.FileItemAdapter;
-import com.example.im_chat.adapter.InvItemAdapter;
 import com.example.im_chat.entity.FileReceiveInfo;
 
+import com.example.im_chat.entity.Friend;
 import com.example.im_chat.entity.MyInfo;
 import com.example.im_chat.other.JID;
+import com.example.im_chat.utils.ChinesePinyinUtil;
 import com.example.im_chat.utils.JDBCUtils;
+import com.example.im_chat.utils.JDBCUtils1;
 import com.example.im_chat.utils.MyXMPPTCPConnectionOnLine;
 
 import org.greenrobot.eventbus.EventBus;
@@ -31,6 +37,9 @@ import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.roster.Roster;
 
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -89,10 +98,11 @@ public class FriendFileFragment extends SupportFragment {
     }
 
     private void initView(View view) {
-        mToolbar = (Toolbar) view.findViewById(R.id.toolbarSettings);
+        mToolbar = (Toolbar) view.findViewById(R.id.toolbarSettings_inv);
         recyclerView=view.findViewById(R.id.recyclerView_inv);
         handler=new Handler();//创建属于主线程的handler
         handler.post(runnableUi);
+        mAdapter = new FileItemAdapter(fileList);       //定义item的适配器
         //实时刷新列表
         new Thread(new Runnable() {
             @Override
@@ -100,8 +110,10 @@ public class FriendFileFragment extends SupportFragment {
                 boolean flg = false;
                 while(!flg){
                     try {
-                        serachFile(uTitles);
-                        Log.i("111111:",fileList.size()+"");
+                        //serachFile(uTitles);
+                        new refreshTask().execute();
+                        Log.i("列表项目数量:",fileList.size()+"");
+                        //mAdapter.notifyDataSetChanged();
                         Thread.sleep(5000);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
@@ -125,18 +137,17 @@ public class FriendFileFragment extends SupportFragment {
             recyclerView.setLayoutManager(manager);//循环显示的多个item的布局管理
             //List<String> mShowItems = new ArrayList<>();
             //mShowItems.add("123");
-            mAdapter = new FileItemAdapter(fileList);       //定义item的适配器
             recyclerView.setAdapter(mAdapter);
             mAdapter.setOnItemChildClickListener(new BaseQuickAdapter.OnItemChildClickListener() {
                 @Override
                 public void onItemChildClick(BaseQuickAdapter adapter, View view, int position) {
-                    if (view.getId() == R.id.tv_menu1_file) {
+                    if (view.getId() == R.id.tv_menu1) {
                         //Log.d("======", "点击菜单1   " + (++index));
                         //handler.post(remove);
                         //adapter.setNewData(InvitationInfo);
                         FileReceiveInfo t= (FileReceiveInfo) adapter.getItem(position);
                         if (t != null) {
-                            attemptAccept(t.getFromJid(),uTitles,"","friend");
+                            attemptAccept(t.getFile_path(),t.getFromJid(),uTitles,t.getFromTime());
                             adapter.remove(position);
                         }
 
@@ -158,8 +169,14 @@ public class FriendFileFragment extends SupportFragment {
         @Override
         public void run() {
             //mAdapter.setNewData(InvitationList);
-            if(!isIn(addItem.getFromJid())){
+            if(!isIn(addItem.getFromJid(),addItem.getFile_path(),addItem.getFromTime())){
                 mAdapter.addData(addItem);
+                Log.i("执行添加动作",mAdapter.getItemCount()+"");
+                //recyclerView.setAdapter(mAdapter);
+                //recyclerView.scrollToPosition(mAdapter.getItemCount()-1);//此句为设置显示
+                //mAdapter.notifyDataSetChanged();
+                //mAdapter.notifyItemInserted(mAdapter.getItemCount()-1);
+                //mAdapter.notifyAll();
             }
         }
     };
@@ -168,6 +185,7 @@ public class FriendFileFragment extends SupportFragment {
     //搜索邀请列表
     private List<FileReceiveInfo> serachFile(final String inputStr){
         final List<FileReceiveInfo> friends = new ArrayList<FileReceiveInfo>();//建立新的list
+
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -180,14 +198,15 @@ public class FriendFileFragment extends SupportFragment {
                     ResultSet rs=st.executeQuery(sql);
                     while(rs.next()){
                         flag=true;
-                        if(!isIn(rs.getString("jid"))){
+                        if(!isIn(rs.getString("jid"),rs.getString("more_name"),rs.getString("send_time"))){
                             //若不在则添加
-                            addItem=new FileReceiveInfo( rs.getString("more"),
+                            addItem=new FileReceiveInfo( rs.getString("more"),//文件名
                                                                  rs.getString("jid"),
                                                                  rs.getString("send_name"),
-                                                                 rs.getString("send_time"));
+                                                                 rs.getString("send_time"),
+                                                                 rs.getString("more_name"));//文件路径
                             handler.post(runnableAdd);//更新界面
-                            //InvitationList.add(addItem);
+                            //fileList.add(addItem);
                         }
                     }
                     JDBCUtils.close(rs,st,cn);
@@ -203,24 +222,96 @@ public class FriendFileFragment extends SupportFragment {
 
     }
 
+    private class refreshTask extends AsyncTask<List<String>, Object, Short> {
+        private List<FileReceiveInfo> addItem=new ArrayList<>();//被加入项
+        @Override
+        protected Short doInBackground(List<String>... params) {
+            try {
+                Log.i("22342432","1");
+                boolean flag=false;
+                Connection cn= JDBCUtils.getConnection();
+                String sql="SELECT * FROM `filelist`WHERE fjid = '"+ JID.unescapeNode(uTitles)+"'AND accepted ='0'";//
+                Statement st=(Statement)cn.createStatement();
+                ResultSet rs=st.executeQuery(sql);
+                while(rs.next()){
+                    flag=true;
+                    if(!isIn(rs.getString("jid"),rs.getString("more_name"),rs.getString("send_time"))){
+                        //若不在则添加
+                        addItem.add(new FileReceiveInfo( rs.getString("more"),//文件名
+                                rs.getString("jid"),
+                                rs.getString("send_name"),
+                                rs.getString("send_time"),
+                                rs.getString("more_name")));//文件路径
+                        //handler.post(runnableAdd);//更新界面
+                        //fileList.add(addItem);
+                    }
+                }
+                JDBCUtils.close(rs,st,cn);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                return 0;
+            }
+
+            return 1;
+        }
+
+        @Override
+        protected void onPostExecute(Short state) {
+            switch (state){
+                case 0:
+                    Toast.makeText(getActivity(), "更新失败", Toast.LENGTH_SHORT).show();
+                    break;
+                case 1:
+                    Log.i("开始更新","123");
+                    //if(mAdapter.getItemCount()==0&&addItem.size()>0) mAdapter.addData(addItem.get(0));
+                    if(addItem.size()!=0){
+                        if(mAdapter.getItemCount()==0) mAdapter.addData(addItem.get(0));
+                        boolean found=false;
+                        for(int i=0;i<addItem.size();i++){
+                            for(int j=0;j<mAdapter.getItemCount();j++){
+                                //如果不在则插入
+                                if(!isIn(addItem.get(i).getFromJid(),addItem.get(i).getFile_path(),addItem.get(i).getFromTime())){
+                                    mAdapter.addData(addItem.get(i));
+                                }
+
+                            }
+                        }
+                    }
+                    else {
+                        //Toast.makeText(getActivity(), "暂无文件", Toast.LENGTH_SHORT).show();
+                    }
+
+                    //Toast.makeText(getActivity(), "更新成功", Toast.LENGTH_SHORT).show();
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
     //是否已在列表中
-    private boolean isIn(String str){
+    private boolean isIn(String fromId,String filePath,String time){
         for(int i=0;i<fileList.size();i++)
         {
-            if(str.equals(fileList.get(i).getFromJid())){
+            if(fromId.equals(fileList.get(i).getFromJid())&&filePath.equals(fileList.get(i).getFile_path())&&time.equals(fileList.get(i).getFromTime())){
                 return true;
             }
         }
         return false;
     }
 
-    //接受好友请求
-    private void attemptAccept(String jid,String fjid,String nickName, String groupName) {
+    //接受下载
+    private void attemptAccept(String file_path,String jid,String fjid,String file_time) {
         List<String> List = new ArrayList<String>();
         List.add(jid);
         List.add(fjid);
-        List.add(nickName);
-        List.add(groupName);
+        List.add(file_path);
+        List.add(file_time);
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.addCategory(Intent.CATEGORY_BROWSABLE);
+        intent.setData(Uri.parse(file_path));
+        startActivity(intent);
         new AcceptTask().execute(List);
     }
 
@@ -231,7 +322,7 @@ public class FriendFileFragment extends SupportFragment {
         List.add(fjid);
         List.add(nickName);
         List.add(groupName);
-        new RejectTask().execute(List);
+        //new RejectTask().execute(List);
     }
 
 
@@ -246,9 +337,8 @@ public class FriendFileFragment extends SupportFragment {
             try {
                 String jid=params[0].get(0);
                 String fjid=params[0].get(1);
-                String nickName=params[0].get(2);
-                String groupName=params[0].get(3);
-                addFriend(JID.escapeNode(jid), nickName,groupName);//openfire添加好友
+                String file_path=params[0].get(2);
+                String file_time=params[0].get(3);
                 int year = calendar.get(Calendar.YEAR);
                 int month = calendar.get(Calendar.MONTH)+1;
                 int day = calendar.get(Calendar.DAY_OF_MONTH);
@@ -257,7 +347,7 @@ public class FriendFileFragment extends SupportFragment {
                 Connection cn= JDBCUtils.getConnection();//更新数据库表
                 Log.i("13234",jid+"==="+fjid);
                 String t=year+"-"+month+"-"+day+" "+hour+":"+minute;
-                String sql = "update filelist set accepted ='1' ,accept_time= '"+t+"', accept_name='"+uTitles_name+ "' where jid = '"+JID.unescapeNode(jid)+"' and fjid = '"+JID.unescapeNode(fjid)+"'";
+                String sql = "update filelist set accepted ='1' ,accept_time= '"+t+"', accept_name='"+uTitles_name+ "' where send_time = '"+file_time+"' and more_name = '"+file_path+"'";
                 PreparedStatement pstm = cn.prepareStatement(sql);
                 //执行更新数据库
                 pstm.executeUpdate();
@@ -276,10 +366,10 @@ public class FriendFileFragment extends SupportFragment {
 
             switch (state){
                 case 1:
-                    Toast.makeText(getContext(), "添加成功", Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(getContext(), "添加成功", Toast.LENGTH_SHORT).show();
                     break;
                 case 2:
-                    Toast.makeText(getContext(), "添加失败", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "下载失败", Toast.LENGTH_SHORT).show();
                     break;
                 default:
                     break;

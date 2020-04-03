@@ -354,7 +354,7 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
                     conn.setDoInput(true);
                     conn.connect();
                     InputStream is = conn.getInputStream();
-                    Thread.sleep(500);
+                    //Thread.sleep(500);
                     bitmap = BitmapFactory.decodeStream(is);
                     is.close();
                     addItem.add(new Friend(
@@ -383,7 +383,7 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
                     conn.setDoInput(true);
                     conn.connect();
                     InputStream is = conn.getInputStream();
-                    Thread.sleep(500);
+                    //Thread.sleep(500);
                     bitmap = BitmapFactory.decodeStream(is);
                     is.close();
                     addItem.add(new Friend(
@@ -412,34 +412,40 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
                 case 1:
                     Log.i("开始更新","123");
                     //if(mAdapter.getItemCount()==0&&addItem.size()>0) mAdapter.addData(addItem.get(0));
-                    if(mAdapter.getItemCount()==0) mAdapter.addData(addItem.get(0));
-                    boolean found=false;
-                    for(int i=0;i<addItem.size();i++){
-                        for(int j=0;j<mAdapter.getItemCount();j++){
-                            //不在并且>=左<=右当前则插入前边
-                            found=false;
-                            //如果不在则在适当位置插入
-                            if(!isIn(addItem.get(i).getJid())){
-                                String t=mAdapter.getItem(j).getName();
-                                t= ChinesePinyinUtil.getPinYinFirstChar(t);//获取第一个字母
-                                if(ChinesePinyinUtil.getPinYinFirstChar(addItem.get(i).getName()).compareTo(t)<=0){
-                                    mAdapter.addData(j,addItem.get(i));
-                                    found=true;
-                                    break;
+                    if(addItem.size()!=0){
+                        if(mAdapter.getItemCount()==0) mAdapter.addData(addItem.get(0));
+                        boolean found=false;
+                        for(int i=0;i<addItem.size();i++){
+                            for(int j=0;j<mAdapter.getItemCount();j++){
+                                //不在并且>=左<=右当前则插入前边
+                                found=false;
+                                //如果不在则在适当位置插入
+                                if(!isIn(addItem.get(i).getJid())){
+                                    String t=mAdapter.getItem(j).getName();
+                                    t= ChinesePinyinUtil.getPinYinFirstChar(t);//获取第一个字母
+                                    if(ChinesePinyinUtil.getPinYinFirstChar(addItem.get(i).getName()).compareTo(t)<=0){
+                                        mAdapter.addData(j,addItem.get(i));
+                                        found=true;
+                                        break;
+                                    }
                                 }
-                            }
-                            //如果在则更新
-                            //if(addItem.get(i).getJid().equals(mAdapter.getItem(j).getJid())&&!addItem.get(i).getOnline().equals(mAdapter.getItem(j).getOnline())){
-                            if(addItem.get(i).getJid().equals(mAdapter.getItem(j).getJid())){
-                                mAdapter.setData(j,addItem.get(i));
-                                Log.i("更新此条",""+i+"  "+addItem.get(i).getAvatar());
-                            }
+                                //如果在则更新
+                                //if(addItem.get(i).getJid().equals(mAdapter.getItem(j).getJid())&&!addItem.get(i).getOnline().equals(mAdapter.getItem(j).getOnline())){
+                                if(addItem.get(i).getJid().equals(mAdapter.getItem(j).getJid())){
+                                    mAdapter.setData(j,addItem.get(i));
+                                    Log.i("更新此条",""+i+"  "+addItem.get(i).getAvatar());
+                                }
 
-                        }
-                        if(!isIn(addItem.get(i).getJid())&&!found){
-                            mAdapter.addData(addItem.get(i));
+                            }
+                            if(!isIn(addItem.get(i).getJid())&&!found){
+                                mAdapter.addData(addItem.get(i));
+                            }
                         }
                     }
+                    else {
+                        Toast.makeText(getActivity(), "暂无好友", Toast.LENGTH_SHORT).show();
+                    }
+
                     //Toast.makeText(getActivity(), "更新成功", Toast.LENGTH_SHORT).show();
                     break;
                 default:
@@ -527,12 +533,6 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
         }
 
     };
-
-    //TODO:打开此界面时，先更新未收到的聊天记录，加载到数据库，再将数据库中聊天记录创建在本地
-    public void onReupdate()
-    {
-
-    }
 
 
     @Override
