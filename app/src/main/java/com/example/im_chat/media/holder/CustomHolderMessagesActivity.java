@@ -1,18 +1,24 @@
 package com.example.im_chat.media.holder;
 
+import android.Manifest;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -302,19 +308,22 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
     @Override
     public void onMessageViewClick(View view, Message message) {
         //TODO: 点击界面，如果是音乐则播放他
-        //AppUtils.showToast(this, message.getText(), false);
-        AppUtils.showToast(this, "http://192.168.1.109:8080/temp-rainy/test.mp3", false);
-        Uri myUri = Uri.parse("http://192.168.1.109:8080/temp-rainy/test.mp3"); // initialize Uri here
-        MediaPlayer mediaPlayer = new MediaPlayer();
-        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-        try {
-            mediaPlayer.setDataSource(getApplicationContext(), myUri);
-            mediaPlayer.prepare();
-        } catch (IOException e) {
-            e.printStackTrace();
+        if(message.getVoice()!=null){
+            //AppUtils.showToast(this, message.getText(), false);
+            AppUtils.showToast(this, "http://192.168.1.109:8080/temp-rainy/test.mp3", false);
+            Uri myUri = Uri.parse("http://192.168.1.109:8080/temp-rainy/test.mp3"); // initialize Uri here
+            MediaPlayer mediaPlayer = new MediaPlayer();
+            mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+            try {
+                mediaPlayer.setDataSource(getApplicationContext(), myUri);
+                mediaPlayer.prepare();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            //mediaPlayer.start();
+            //File remoteFile = new File(message.getText());
         }
-        //mediaPlayer.start();
-        //File remoteFile = new File(message.getText());
+
     }
     private void initChatManager(){
         connection = MyXMPPTCPConnectionOnLine.getInstance();
@@ -542,6 +551,8 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
         }
 
     }
+
+
 
     @Override
     public void onDestroy() {

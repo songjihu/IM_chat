@@ -1,14 +1,20 @@
 package com.example.im_chat.ui.fragment.other;
+import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.Fragment;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.sqlite.SQLiteDatabase;
+import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -37,6 +43,8 @@ import com.example.im_chat.media.holder.CustomHolderMessagesActivity;
 
 import org.greenrobot.eventbus.EventBus;
 
+import java.io.IOException;
+
 public class WebFragment extends Fragment {
 
     private WebView webView;
@@ -51,8 +59,14 @@ public class WebFragment extends Fragment {
     //private String url="http://123.56.163.211:8080/";
     private String url="http://192.168.1.109:8080/";
     private String fileCatalog="temp-rainy/";//服务器目录
+    private String fileCatalog_voice="temp-rainy/voice/";//服务器语音目录
     private String sourceUrl="http://192.168.1.109:8080/temp-rainy/user_avatar/";
     private static DaoSession daoSession;
+
+
+    private MediaRecorder recorder;  // 录音类
+    private String fileName;  // 录音生成的文件存储路径
+
 
 
 
@@ -66,6 +80,10 @@ public class WebFragment extends Fragment {
         friend_name= bundle.getString("toName");
         friend_id= bundle.getString("toId");
         initGreenDao();
+        requestPermission(Manifest.permission.READ_EXTERNAL_STORAGE);
+        requestPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        requestPermission(Manifest.permission.RECORD_AUDIO);
+        fileName = Environment.getExternalStorageDirectory().getAbsolutePath() + "/audiorecordertest.amr";
     }
 
     @Override
@@ -103,6 +121,8 @@ public class WebFragment extends Fragment {
         webView.loadUrl(url+"file");
 
         webView.setWebChromeClient(new WebChromeClient(){
+
+
 
             // For 3.0+ Devices (Start)
             // onActivityResult attached before constructor
@@ -224,6 +244,20 @@ public class WebFragment extends Fragment {
                 Log.i("数据库加入++++++",(String) helper_file.getMsgJson());
                 EventBus.getDefault().postSticky(sendInfo);
             }
+            if(name.split(":")[1].equals("start")){
+                sendInfo.setType("voice");
+                sendInfo.setMsg(url+fileCatalog_voice+name.split(":")[0]);//发送语音位置
+                Log.i("!!","开始录音");
+                startRecord();
+
+            }
+            if(name.split(":")[1].equals("stop")){
+                sendInfo.setType("voice");
+                sendInfo.setMsg(url+fileCatalog_voice+name.split(":")[0]);//发送语音位置
+                Log.i("!!","停止录音");
+                stopRecord();
+            }
+
 
 
         }
@@ -264,6 +298,43 @@ public class WebFragment extends Fragment {
             Toast.makeText(getActivity(), "Failed to Upload Image", Toast.LENGTH_LONG).show();
     }
 
+
+    private void requestPermission(String permission){
+        if(ContextCompat.checkSelfPermission(getActivity(), permission)!= PackageManager.PERMISSION_GRANTED){
+            ActivityCompat.requestPermissions(getActivity(), new String[]{permission}, 0);
+        }
+    }
+
+    public boolean startRecord() {
+        recorder = new MediaRecorder();
+        try {
+            recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        }catch (IllegalStateException e){
+            Log.i("!!", "设置录音源失败");
+            e.printStackTrace();
+        }
+
+        recorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_NB);
+        recorder.setOutputFile(fileName);
+        recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+        try {
+            recorder.prepare();
+        }catch (IOException e){
+            Log.e("!!", "准备失败");
+            e.printStackTrace();
+        }
+        recorder.start();
+        Log.i("!!", "开始录音...");
+        return true;
+    }
+
+    public void stopRecord() {
+        recorder.stop();
+        recorder.reset();
+        recorder.release();
+        recorder = null;
+        Log.i("!!", "停止录音");
+    }
 
     @Override
     public void onPause() {

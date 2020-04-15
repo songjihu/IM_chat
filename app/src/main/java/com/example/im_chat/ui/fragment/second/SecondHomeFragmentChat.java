@@ -38,6 +38,7 @@ import org.jivesoftware.smack.roster.Roster;
 import org.jivesoftware.smack.roster.RosterEntry;
 import org.jivesoftware.smack.roster.RosterListener;
 
+import java.io.EOFException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -353,10 +354,16 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
                     conn.setConnectTimeout(0);
                     conn.setDoInput(true);
                     conn.connect();
-                    InputStream is = conn.getInputStream();
+                    InputStream is;
+                    try{
+                        is = conn.getInputStream();
+                        bitmap = BitmapFactory.decodeStream(is);
+                        is.close();
+                    }catch (Exception e){
+                        bitmap=null;
+                        e.printStackTrace();
+                    }
                     //Thread.sleep(500);
-                    bitmap = BitmapFactory.decodeStream(is);
-                    is.close();
                     addItem.add(new Friend(
                             rs.getString("jid"),
                             rs.getString("send_name"),
@@ -382,10 +389,15 @@ public class SecondHomeFragmentChat extends SupportFragment implements SwipeRefr
                     conn.setConnectTimeout(0);
                     conn.setDoInput(true);
                     conn.connect();
-                    InputStream is = conn.getInputStream();
-                    //Thread.sleep(500);
-                    bitmap = BitmapFactory.decodeStream(is);
-                    is.close();
+                    InputStream is;
+                    try{
+                        is = conn.getInputStream();
+                        bitmap = BitmapFactory.decodeStream(is);
+                        is.close();
+                    }catch (Exception e){
+                        bitmap=null;
+                        e.printStackTrace();
+                    }
                     addItem.add(new Friend(
                             rs.getString("fjid"),
                             rs.getString("accept_name"),
