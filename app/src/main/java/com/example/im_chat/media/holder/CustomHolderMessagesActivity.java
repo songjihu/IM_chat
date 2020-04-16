@@ -323,6 +323,24 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
             //mediaPlayer.start();
             //File remoteFile = new File(message.getText());
         }
+        //AppUtils.showToast(this, message.getText(), false);
+        //AppUtils.showToast(this, "http://192.168.1.109:8080/temp-rainy/audiorecordertest.amr", false);
+        Uri myUri = Uri.parse("http://192.168.1.109:8080/temp-rainy/user_voice/audiorecordertest.mp3"); // initialize Uri here
+        //Uri myUri = Uri.parse("http://192.168.1.109:8080/temp-rainy/test.mp3"); // initialize Uri here
+        MediaPlayer mediaPlayer = new MediaPlayer();
+        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        if(mediaPlayer.isPlaying()){
+            mediaPlayer.reset();
+        }
+        try {
+            mediaPlayer.setDataSource(getApplicationContext(), myUri);
+            mediaPlayer.prepare();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        mediaPlayer.start();
+        //File remoteFile = new File(message.getText());
 
     }
     private void initChatManager(){

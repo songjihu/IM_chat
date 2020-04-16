@@ -21,6 +21,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.JavascriptInterface;
+import android.webkit.JsPromptResult;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
@@ -30,6 +31,7 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import com.example.im_chat.R;
+import com.example.im_chat.activity.MainActivity;
 import com.example.im_chat.db.DaoMaster;
 import com.example.im_chat.db.DaoSession;
 import com.example.im_chat.entity.ChatMessage;
@@ -43,6 +45,7 @@ import com.example.im_chat.media.holder.CustomHolderMessagesActivity;
 
 import org.greenrobot.eventbus.EventBus;
 
+import java.io.File;
 import java.io.IOException;
 
 public class WebFragment extends Fragment {
@@ -66,6 +69,7 @@ public class WebFragment extends Fragment {
 
     private MediaRecorder recorder;  // 录音类
     private String fileName;  // 录音生成的文件存储路径
+    private Boolean voice_flag=false;
 
 
 
@@ -140,6 +144,18 @@ public class WebFragment extends Fragment {
             @TargetApi(Build.VERSION_CODES.LOLLIPOP)
             public boolean onShowFileChooser(WebView mWebView, ValueCallback<Uri[]> filePathCallback, WebChromeClient.FileChooserParams fileChooserParams)
             {
+                if(voice_flag=true){
+                    Log.i("!!",fileName);
+                    File f = new File(fileName);
+                    if(f.exists()){
+                        Uri u = Uri.fromFile(f);
+                        filePathCallback.onReceiveValue(new Uri[]{u});
+                    }
+                    voice_flag=false;
+                    return true;
+                }
+
+
                 if (uploadMessage != null) {
                     uploadMessage.onReceiveValue(null);
                     uploadMessage = null;
@@ -178,6 +194,10 @@ public class WebFragment extends Fragment {
                 i.setType("image/*");
                 startActivityForResult(Intent.createChooser(i, "File Chooser"), FILECHOOSER_RESULTCODE);
             }
+
+
+
+
 
         });
 
@@ -324,6 +344,7 @@ public class WebFragment extends Fragment {
             e.printStackTrace();
         }
         recorder.start();
+        voice_flag=true;
         Log.i("!!", "开始录音...");
         return true;
     }
