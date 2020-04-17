@@ -345,6 +345,7 @@ public class TestLoginActivity extends Activity implements LoaderCallbacks<Curso
                     ChatMessage chat_msg =new ChatMessage(null,messages.get(i).getBody());
                     daoSession.insert(chat_msg);
                     Log.i("offline数据库加入++++++",messages.get(i).getBody());
+
                 }
             } catch (SmackException.NoResponseException e) {
                 e.printStackTrace();

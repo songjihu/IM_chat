@@ -120,6 +120,12 @@ public abstract class DemoMessagesActivity extends AppCompatActivity
                     if(helper.getMsgType()!=null&&helper.getMsgType().equals("img")){
                         message.setImage(new Message.Image(helper.getMsgContent()));
                     }
+                    if(helper.getMsgType()!=null&&helper.getMsgType().equals("voice")){
+                        String t_url=helper.getMsgContent().split("!")[1];
+                        int t_duration=Integer.parseInt(helper.getMsgContent().split("!")[0]);
+                        message.setVoice(new Message.Voice(t_url,t_duration));
+                        Log.i("注意","加入语音");
+                    }
                     new_msgs.add(message);//从最新一条开始添加
                 }
                 //我发送的消息
@@ -132,6 +138,12 @@ public abstract class DemoMessagesActivity extends AppCompatActivity
                     Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper.getMsgDate());
                     if(helper.getMsgType()!=null&&helper.getMsgType().equals("img")){
                         message.setImage(new Message.Image(helper.getMsgContent()));
+                    }
+                    if(helper.getMsgType()!=null&&helper.getMsgType().equals("voice")){
+                        String t_url=helper.getMsgContent().split("!")[1];
+                        int t_duration=Integer.parseInt(helper.getMsgContent().split("!")[0]);
+                        message.setVoice(new Message.Voice(t_url,t_duration));
+                        Log.i("注意","加入语音");
                     }
                     new_msgs.add(message);//从最新一条开始添加
                 }

@@ -145,6 +145,12 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
                 message.setImage(new Message.Image(helper.getMsgContent()));
                 message.setText("图片");
             }
+            if(helper.getMsgType()!=null&&helper.getMsgType().equals("voice")){
+                String t_url=helper.getMsgContent().split("!")[1];
+                int t_duration=Integer.parseInt(helper.getMsgContent().split("!")[0]);
+                message.setVoice(new Message.Voice(t_url,t_duration));
+                message.setText("语音");
+            }
             String FriendId=helper.getMsgFromId();
             String FriendName=helper.getMsgFrom();
             int unreadCount=0;

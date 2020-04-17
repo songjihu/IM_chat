@@ -47,6 +47,7 @@ import org.greenrobot.eventbus.EventBus;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Calendar;
 
 public class WebFragment extends Fragment {
 
@@ -62,7 +63,7 @@ public class WebFragment extends Fragment {
     //private String url="http://123.56.163.211:8080/";
     private String url="http://192.168.1.109:8080/";
     private String fileCatalog="temp-rainy/";//服务器目录
-    private String fileCatalog_voice="temp-rainy/voice/";//服务器语音目录
+    private String fileCatalog_voice="temp-rainy/user_voice/";//服务器语音目录
     private String sourceUrl="http://192.168.1.109:8080/temp-rainy/user_avatar/";
     private static DaoSession daoSession;
 
@@ -70,6 +71,10 @@ public class WebFragment extends Fragment {
     private MediaRecorder recorder;  // 录音类
     private String fileName;  // 录音生成的文件存储路径
     private Boolean voice_flag=false;
+    private int min_s=0;//开始分钟
+    private int sec_s=0;//开始秒
+    private int min_e=0;//结束分钟
+    private int sec_e=0;//结束秒
 
 
 
@@ -144,7 +149,7 @@ public class WebFragment extends Fragment {
             @TargetApi(Build.VERSION_CODES.LOLLIPOP)
             public boolean onShowFileChooser(WebView mWebView, ValueCallback<Uri[]> filePathCallback, WebChromeClient.FileChooserParams fileChooserParams)
             {
-                if(voice_flag=true){
+                if(voice_flag){
                     Log.i("!!",fileName);
                     File f = new File(fileName);
                     if(f.exists()){
@@ -217,6 +222,7 @@ public class WebFragment extends Fragment {
         public void showInfoFromJs(final String name) {
             //确定文件可用后得到返回值
             //Toast.makeText(mContext, name, Toast.LENGTH_SHORT).show();
+            //发送给web处理
             webView.post(new Runnable(){
                 @Override
                 public void run(){
@@ -228,6 +234,7 @@ public class WebFragment extends Fragment {
                     webView.loadUrl("javascript:showInfoFromJava('" + msg + "')");
                 }
             });
+            //本地处理
             SendInfo sendInfo=new SendInfo();
             sendInfo.setUserId(user_id);
             sendInfo.setUserName(user_name);
@@ -265,17 +272,35 @@ public class WebFragment extends Fragment {
                 EventBus.getDefault().postSticky(sendInfo);
             }
             if(name.split(":")[1].equals("start")){
-                sendInfo.setType("voice");
-                sendInfo.setMsg(url+fileCatalog_voice+name.split(":")[0]);//发送语音位置
                 Log.i("!!","开始录音");
-                startRecord();
-
+                String t_filename = Environment.getExternalStorageDirectory().getAbsolutePath() + "/"+name.split(":")[0];
+                startRecord(t_filename);
             }
             if(name.split(":")[1].equals("stop")){
-                sendInfo.setType("voice");
-                sendInfo.setMsg(url+fileCatalog_voice+name.split(":")[0]);//发送语音位置
                 Log.i("!!","停止录音");
                 stopRecord();
+            }
+            if(name.split(":")[1].equals("voice")){
+                sendInfo.setType("voice");
+                int time;
+                if(min_s==min_e){//时长1min以内（不超过60min）
+                    time=sec_e-sec_s;
+                }else {//时长1min以上（不超过60min）
+                    time=((60+min_e-min_s)%60)*60+sec_e-sec_s;
+                }
+                sendInfo.setMsg(time+"!"+url+fileCatalog_voice+name.split(":")[0]);//发送语音位置和时长
+                //将语音消息加入本地数据库
+                MessageTranslateTo helper=new MessageTranslateTo(user_name,user_id,friend_id,sendInfo.getMsg(),"voice");
+                //User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),sourceUrl+helper.getMsgFromId()+".jpg",true);
+                User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),sourceUrl+helper.getMsgFromId()+".jpg",true);
+                MessageTranslateBack helper1=new MessageTranslateBack(helper.getMsgJson());
+                Log.i("2发送222222222222222",helper.getMsgJson());
+                Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper1.getMsgDate());
+                message.setImage(new Message.Image(sendInfo.getMsg()));
+                ChatMessage chat_msg =new ChatMessage(null,(String) helper.getMsgJson());
+                //daoSession.insert(chat_msg);
+                Log.i("数据库加入++++++",(String) helper.getMsgJson());
+                EventBus.getDefault().postSticky(sendInfo);
             }
 
 
@@ -325,7 +350,7 @@ public class WebFragment extends Fragment {
         }
     }
 
-    public boolean startRecord() {
+    public boolean startRecord(String t_filename) {
         recorder = new MediaRecorder();
         try {
             recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
@@ -334,8 +359,9 @@ public class WebFragment extends Fragment {
             e.printStackTrace();
         }
 
+        fileName = t_filename;
         recorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_NB);
-        recorder.setOutputFile(fileName);
+        recorder.setOutputFile(t_filename);
         recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
         try {
             recorder.prepare();
@@ -344,6 +370,9 @@ public class WebFragment extends Fragment {
             e.printStackTrace();
         }
         recorder.start();
+        Calendar calendar = Calendar.getInstance();//获取系统的日期
+        min_s = calendar.get(Calendar.MINUTE);//分钟
+        sec_s = calendar.get(Calendar.SECOND);//秒
         voice_flag=true;
         Log.i("!!", "开始录音...");
         return true;
@@ -351,6 +380,9 @@ public class WebFragment extends Fragment {
 
     public void stopRecord() {
         recorder.stop();
+        Calendar calendar = Calendar.getInstance();//获取系统的日期
+        min_e = calendar.get(Calendar.MINUTE);//分钟
+        sec_e = calendar.get(Calendar.SECOND);//秒
         recorder.reset();
         recorder.release();
         recorder = null;

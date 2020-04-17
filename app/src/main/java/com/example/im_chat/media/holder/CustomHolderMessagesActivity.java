@@ -107,6 +107,7 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
     private Message.Image t;
 
 
+
     @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
     public void onEvent(MyInfo data) {
         //接收用户jid
@@ -127,6 +128,12 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
                     message.setImage(new Message.Image(helper.getMsgContent()));
                     //message.setVoice(new Message.Voice("http://192.168.1.109:8080/temp-rainy/test.mp3",210));
                     Log.i("注意","加入图片");
+                }
+                if(helper.getMsgType()!=null&&helper.getMsgType().equals("voice")){
+                    String t_url=helper.getMsgContent().split("!")[1];
+                    int t_duration=Integer.parseInt(helper.getMsgContent().split("!")[0]);
+                    message.setVoice(new Message.Voice(t_url,t_duration));
+                    Log.i("注意","加入语音");
                 }
                 messagesAdapter.addToStart(message,true);//加入下方列表
                 //System.identityHashCode(messagesList);
@@ -152,6 +159,9 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
             String msg=data.getMsg();
             if(data.getType().equals("img")){
                 sendChatMessage(msg,"img");
+            }
+            if(data.getType().equals("voice")){
+                sendChatMessage(msg,"voice");
             }
             if(data.getType().equals("file")){
                 sendChatMessage(msg,"file");
@@ -307,40 +317,27 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
 
     @Override
     public void onMessageViewClick(View view, Message message) {
-        //TODO: 点击界面，如果是音乐则播放他
+        //点击界面，如果是音乐则播放他
         if(message.getVoice()!=null){
             //AppUtils.showToast(this, message.getText(), false);
-            AppUtils.showToast(this, "http://192.168.1.109:8080/temp-rainy/test.mp3", false);
-            Uri myUri = Uri.parse("http://192.168.1.109:8080/temp-rainy/test.mp3"); // initialize Uri here
+            Log.i("!!", message.getVoice().getUrl()+"!!!"+message.getVoice().getDuration());
+            //Uri myUri = Uri.parse("http://192.168.1.109:8080/temp-rainy/test.mp3"); // initialize Uri here
+            Uri myUri = Uri.parse(message.getVoice().getUrl()); // initialize Uri here
             MediaPlayer mediaPlayer = new MediaPlayer();
             mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+            if(mediaPlayer.isPlaying()){
+                mediaPlayer.reset();
+            }
             try {
                 mediaPlayer.setDataSource(getApplicationContext(), myUri);
                 mediaPlayer.prepare();
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            //mediaPlayer.start();
+            mediaPlayer.start();
             //File remoteFile = new File(message.getText());
         }
-        //AppUtils.showToast(this, message.getText(), false);
-        //AppUtils.showToast(this, "http://192.168.1.109:8080/temp-rainy/audiorecordertest.amr", false);
-        Uri myUri = Uri.parse("http://192.168.1.109:8080/temp-rainy/user_voice/audiorecordertest.mp3"); // initialize Uri here
-        //Uri myUri = Uri.parse("http://192.168.1.109:8080/temp-rainy/test.mp3"); // initialize Uri here
-        MediaPlayer mediaPlayer = new MediaPlayer();
-        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-        if(mediaPlayer.isPlaying()){
-            mediaPlayer.reset();
-        }
-        try {
-            mediaPlayer.setDataSource(getApplicationContext(), myUri);
-            mediaPlayer.prepare();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
-        mediaPlayer.start();
-        //File remoteFile = new File(message.getText());
 
     }
     private void initChatManager(){
@@ -428,12 +425,24 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
             Log.i("数据库加入++++++",(String) helper.getMsgJson());
             messagesAdapter.addToStart(message,true);//加入下方列表
         }
+        if(type.equals("voice")) {
+            String t_url=helper.getMsgContent().split("!")[1];
+            int t_duration=Integer.parseInt(helper.getMsgContent().split("!")[0]);
+            message.setVoice(new Message.Voice(t_url,t_duration));
+            ChatMessage chat_msg =new ChatMessage(null,(String) helper.getMsgJson());
+            daoSession.insert(chat_msg);
+            Log.i("数据库加入++++++",(String) helper.getMsgJson());
+            messagesAdapter.addToStart(message,true);//加入下方列表
+        }
         if(type.equals("text")) {
             ChatMessage chat_msg =new ChatMessage(null,(String) helper.getMsgJson());
             daoSession.insert(chat_msg);
             Log.i("数据库加入++++++",(String) helper.getMsgJson());
             messagesAdapter.addToStart(message,true);//加入下方列表
         }
+
+        //额外处理
+
         //加入云端数据库
         if(type.equals("file")) {
             List<String> inputList = new ArrayList<String>();
@@ -449,9 +458,10 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
             messageToUpdate=message;
             new setAvatarTask().execute(inputList);
         }
-        List<String> inputList = new ArrayList<String>();
+        /*List<String> inputList = new ArrayList<String>();
         inputList.add(message.getImageUrl());//url id
         inputList.add(helper.getMsgFrom()+helper1.getMsgDate());
+         */
 
 
         //}
