@@ -252,7 +252,6 @@ public class FriendFileFragment extends SupportFragment {
                 e.printStackTrace();
                 return 0;
             }
-
             return 1;
         }
 

@@ -238,7 +238,7 @@ public class AddAdapter extends RecyclerView.Adapter <AddAdapter.VH> {
                 conn.setDoInput(true);
                 conn.connect();
                 InputStream is = conn.getInputStream();
-                Thread.sleep(2000);
+                //Thread.sleep(2000);
                 bitmap = BitmapFactory.decodeStream(is);
                 is.close();
                 Log.i("更新函数执行","ohohoho"+url);

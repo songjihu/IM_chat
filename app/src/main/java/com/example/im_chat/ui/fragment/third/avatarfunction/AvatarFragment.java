@@ -72,7 +72,6 @@ public class AvatarFragment extends SupportFragment {
             new setAvatarTask().execute(inputList);//刷新一次
             new setAvatarTask().execute(inputList);//刷新一次
 
-
         }
 
     }
