@@ -38,7 +38,7 @@ public class CustomIncomingTextMessageViewHolder
         super(itemView, payload);
         //在线状态为刚开始的设定
         onlineIndicator = itemView.findViewById(R.id.onlineIndicator);
-        userName = itemView.findViewById(R.id.messageName);
+        //userName = itemView.findViewById(R.id.messageName);
         imageView = itemView.findViewById(R.id.messageUserAvatar);
     }
 
@@ -57,7 +57,7 @@ public class CustomIncomingTextMessageViewHolder
             onlineIndicator.setBackgroundResource(R.drawable.shape_bubble_offline);
         }
 
-        userName.setText(message.getUser().getName());
+        //userName.setText(message.getUser().getName());
         //We can set click listener on view from payload
         //为来自payload的视图添加监听器
         final Payload payload = (Payload) this.payload;

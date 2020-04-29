@@ -473,7 +473,7 @@ public class WebFragment extends Fragment {
                     sendInfo.setFriendId(friend_id);
                     sendInfo.setFriendName(friend_name);
                     sendInfo.setType("location");
-                    sendInfo.setMsg(lat+"!"+lon+"!"+getMapUrl(lat,lon));//发送位置缩略图的url
+                    sendInfo.setMsg(lat+"!"+lon+"!"+getMapUrl(lat,lon)+"!"+amapLocation.getAddress());//发送位置缩略图的url
                     //将语音消息加入本地数据库
                     MessageTranslateTo helper=new MessageTranslateTo(user_name,user_id,friend_id,sendInfo.getMsg(),"location");
                     //User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),sourceUrl+helper.getMsgFromId()+".jpg",true);

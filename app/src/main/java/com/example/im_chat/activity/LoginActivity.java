@@ -34,6 +34,7 @@ import com.example.im_chat.db.DaoMaster;
 import com.example.im_chat.db.DaoSession;
 import com.example.im_chat.entity.ChatMessage;
 import com.example.im_chat.entity.MyInfo;
+import com.example.im_chat.entity.OldInfo;
 import com.example.im_chat.entity.UserInfo;
 import com.example.im_chat.other.JID;
 
@@ -117,6 +118,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> ,
     private List<String> loginList = new ArrayList<String>();
 
     private MyInfo myInfo;
+    private OldInfo oldInfo=new OldInfo();
 
 
 
@@ -351,18 +353,19 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> ,
             try {
                 messages =  offlineMessageManager.getMessages();
                 Log.i("离线聊天数量:",messages.size()+"");
+                List<String> latestJson=new ArrayList<>();
                 for(int i=0;i<messages.size();i++)
                 {
                     //将所有接收到的消息，加入到数据库
                     ChatMessage chat_msg =new ChatMessage(null,messages.get(i).getBody());
                     daoSession.insert(chat_msg);
                     Log.i("offline数据库加入++++++",messages.get(i).getBody());
-                    //myInfo.setUserId(uuu.getUserId());
-                    //myInfo.setUserName(uuu.getUserName());
-                    //myInfo.setLatestJson((String) messages.get(i).getBody());//加入最新消息
-                    //myInfo.setSendId("add_msg");
-                    //EventBus.getDefault().postSticky(myInfo);
+                    latestJson.add((String) messages.get(i).getBody());
                 }
+                oldInfo.setLatestJson(latestJson);
+                oldInfo.setSendId("add_msgs");
+                EventBus.getDefault().postSticky(oldInfo);
+
             } catch (SmackException.NoResponseException e) {
                 e.printStackTrace();
             } catch (XMPPException.XMPPErrorException e) {

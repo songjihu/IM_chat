@@ -2,10 +2,8 @@ package com.example.im_chat.ui.fragment.first;
 
 import android.content.Context;
 import android.content.Intent;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.os.Handler;
-import android.provider.ContactsContract;
 import android.support.annotation.Nullable;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.RecyclerView;
@@ -18,9 +16,10 @@ import android.view.ViewGroup;
 import com.example.im_chat.R;
 
 import com.example.im_chat.db.DaoSession;
-import com.example.im_chat.entity.ChatMessage;
 import com.example.im_chat.entity.Friend;
 import com.example.im_chat.entity.MyInfo;
+import com.example.im_chat.entity.OldInfo;
+import com.example.im_chat.entity.ZeroInfo;
 import com.example.im_chat.helper.MessageTranslateBack;
 import com.example.im_chat.media.data.fixtures.DialogsFixtures;
 import com.example.im_chat.media.data.model.Dialog;
@@ -29,8 +28,6 @@ import com.example.im_chat.media.data.model.User;
 import com.example.im_chat.media.holder.CustomHolderDialogsActivity;
 import com.example.im_chat.media.holder.CustomHolderMessagesActivity;
 import com.example.im_chat.media.holder.holders.dialogs.CustomDialogViewHolder;
-import com.example.im_chat.other.JID;
-import com.example.im_chat.utils.JDBCUtils;
 import com.example.im_chat.utils.MyXMPPTCPConnection;
 import com.example.im_chat.utils.MyXMPPTCPConnectionOnLine;
 import com.stfalcon.chatkit.commons.ImageLoader;
@@ -40,20 +37,7 @@ import com.stfalcon.chatkit.dialogs.DialogsListAdapter;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
-import org.jivesoftware.smack.SmackException;
-import org.jivesoftware.smack.XMPPException;
-import org.jivesoftware.smack.chat.Chat;
-import org.jivesoftware.smack.chat.ChatManagerListener;
-import org.jivesoftware.smack.chat.ChatMessageListener;
-import org.jivesoftware.smack.roster.Roster;
-import org.jivesoftware.smack.roster.RosterEntry;
-import org.jivesoftware.smackx.offline.OfflineMessageManager;
 
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -90,6 +74,7 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
     private int mScrollTotal;
     private String uTitles = new String();
     private String latestJson;//最新好友消息
+    private List<String> oldJson =new ArrayList<>();
 
 
     //显示好友列表
@@ -145,6 +130,11 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
                 message.setImage(new Message.Image(helper.getMsgContent()));
                 message.setText("图片");
             }
+            if(helper.getMsgType()!=null&&helper.getMsgType().equals("location")){
+                message.setImage(new Message.Image(helper.getMsgContent().split("!")[2]));
+                Log.i("注意","加入位置缩略图");
+                message.setText("位置信息");
+            }
             if(helper.getMsgType()!=null&&helper.getMsgType().equals("voice")){
                 String t_url=helper.getMsgContent().split("!")[1];
                 int t_duration=Integer.parseInt(helper.getMsgContent().split("!")[0]);
@@ -175,6 +165,26 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
 
     }
 
+    @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
+    public void onEvent(OldInfo data) {
+        //收到一条消息
+        if(data.getSendId().equals("add_msgs")){
+            oldJson=data.getLatestJson();
+        }
+
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
+    public void onEvent(ZeroInfo data) {
+        for(int i=0;i<unreadList.size();i++){
+            if(data.getSendId().equals(unreadList.get(i).getId())){
+                unreadList.get(i).setUnreadCount(0);
+                break;
+            }
+        }
+
+    }
+
     private static DaoSession daoSession;//配置数据库
 
 
@@ -189,6 +199,7 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
         dialogsAdapter.setOnDialogClickListener(this);
         dialogsList.setAdapter(dialogsAdapter);
         Log.i("开启第一个Fragment","ohohohohohohohoh");
+        loadOldMessages();
     }
 
 
@@ -205,7 +216,56 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
 
     };
 
+    private void loadOldMessages(){
+        String t1;
+        Log.i("!!未读数量",oldJson.size()+"");
+        for(int j = 0; j< oldJson.size(); j++){
+            t1= oldJson.get(j);
+            MessageTranslateBack helper=new MessageTranslateBack(t1);
+            //获取一个好友
+            User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),sourceUrl+helper.getMsgFromId()+".jpg",true);
+            ArrayList<User> users = new ArrayList<>();
+            users.add(user);
+            //ChatMessage chatMessage = new ChatMessage((String) msg.obj, 1);
+            Message message = new Message(helper.getMsgFrom(),user,helper.getMsgContent(),helper.getMsgDate());
+            //messageList.add(chatMessage);
+            if(helper.getMsgType()!=null&&helper.getMsgType().equals("img")){
+                message.setImage(new Message.Image(helper.getMsgContent()));
+                message.setText("图片");
+            }
+            if(helper.getMsgType()!=null&&helper.getMsgType().equals("location")){
+                message.setImage(new Message.Image(helper.getMsgContent().split("!")[2]));
+                Log.i("注意","加入位置缩略图");
+                message.setText("位置信息");
+            }
+            if(helper.getMsgType()!=null&&helper.getMsgType().equals("voice")){
+                String t_url=helper.getMsgContent().split("!")[1];
+                int t_duration=Integer.parseInt(helper.getMsgContent().split("!")[0]);
+                message.setVoice(new Message.Voice(t_url,t_duration));
+                message.setText("语音");
+            }
+            String FriendId=helper.getMsgFromId();
+            String FriendName=helper.getMsgFrom();
+            int unreadCount=0;
+            //如果存在，则移除
+            for(int i=0;i<unreadList.size();i++){
+                if(FriendId.equals(unreadList.get(i).getId())){
+                    unreadCount=unreadList.get(i).getUnreadCount();
+                    unreadList.remove(i);
+                    dialogsAdapter.deleteById(FriendId);
+                    break;
+                }
+            }
+            //加入顶部
+            Log.i("加入id+++++",sourceUrl+FriendId+".jpg");
+            Dialog t=new Dialog(FriendId,FriendName,sourceUrl+FriendId+".jpg",users,message,unreadCount+1);
 
+            dialogsAdapter.addItem(0,t);
+            //imageLoader.loadImage(dialogsAdapter.getItemById(FriendId).getClass().);
+
+            unreadList.add(0,t);
+        }
+    }
 
     @Override
     public void onDialogClick(Dialog dialog) {

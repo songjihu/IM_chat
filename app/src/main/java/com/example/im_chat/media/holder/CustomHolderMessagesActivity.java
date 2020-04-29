@@ -31,6 +31,7 @@ import com.example.im_chat.db.DaoSession;
 import com.example.im_chat.entity.ChatMessage;
 import com.example.im_chat.entity.MyInfo;
 import com.example.im_chat.entity.SendInfo;
+import com.example.im_chat.entity.ZeroInfo;
 import com.example.im_chat.helper.MessageTranslateBack;
 import com.example.im_chat.helper.MessageTranslateTo;
 import com.example.im_chat.media.DemoMessagesActivity;
@@ -174,6 +175,7 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
                 sendChatMessage(msg,"file");
             }
             if(data.getType().equals("location")){
+                sendChatMessage("我在"+msg.split("!")[3]+"附近","text");
                 sendChatMessage(msg,"location");
             }
             //sendChatMessage(msg,data.getType());
@@ -349,9 +351,9 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
             //File remoteFile = new File(message.getText());
         }
         //if(message.getImageUrl()!=null&&message.getImageUrl().split(".")[0].equals("http://restapi")){
-        if(message.getText().split("!").length==3){
+        if(message.getText().split("!").length==4){
             Log.i("!!", "跳转到高德地图");
-            String pointName=null;
+            String pointName=message.getText().split("!")[3];
             double lat=Double.valueOf(message.getText().split("!")[0]);
             double lon=Double.valueOf(message.getText().split("!")[1]);
             openGaoDeMap("im_chat",pointName,lat,lon);
@@ -640,6 +642,9 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
     public void onPause(){
         super.onPause();
         Log.i("暂停方法执行","4324352");
+        ZeroInfo zeroInfo=new ZeroInfo();
+        zeroInfo.setSendId(friend_id);
+        EventBus.getDefault().postSticky(zeroInfo);
         //messagesAdapter.clear();
         //messagesAdapter.clear(true);
     }
