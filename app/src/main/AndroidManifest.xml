@@ -20,6 +20,9 @@
     <!-- App 需要使用的部分权限 -->
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
 
 
 
@@ -72,6 +75,11 @@
             android:theme="@android:style/Theme.NoDisplay">
         </activity>
         <activity android:name=".activity.WebActivity"></activity>
+        <activity android:name=".activity.MapActivity"></activity>
+        <meta-data
+            android:name="com.amap.api.v2.apikey"
+            android:value="c979f43f9afd2596df7b7efcfa414041"/>
+        <service android:name="com.amap.api.location.APSService"></service>
     </application>
 
 </manifest>

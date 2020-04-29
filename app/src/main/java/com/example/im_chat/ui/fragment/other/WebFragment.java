@@ -7,12 +7,18 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.sqlite.SQLiteDatabase;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.location.LocationProvider;
 import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.Toolbar;
@@ -30,6 +36,10 @@ import android.webkit.WebViewClient;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.amap.api.location.AMapLocation;
+import com.amap.api.location.AMapLocationClient;
+import com.amap.api.location.AMapLocationClientOption;
+import com.amap.api.location.AMapLocationListener;
 import com.example.im_chat.R;
 import com.example.im_chat.activity.MainActivity;
 import com.example.im_chat.db.DaoMaster;
@@ -47,7 +57,11 @@ import org.greenrobot.eventbus.EventBus;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.Calendar;
+import java.util.List;
+
+import static com.zego.zegoavkit2.receiver.BackgroundMonitor.TAG;
 
 public class WebFragment extends Fragment {
 
@@ -75,6 +89,10 @@ public class WebFragment extends Fragment {
     private int sec_s=0;//开始秒
     private int min_e=0;//结束分钟
     private int sec_e=0;//结束秒
+
+    public static final int LOCATION_CODE = 301;
+    private LocationManager locationManager;
+    private String locationProvider = null;
 
 
 
@@ -302,6 +320,11 @@ public class WebFragment extends Fragment {
                 Log.i("数据库加入++++++",(String) helper.getMsgJson());
                 EventBus.getDefault().postSticky(sendInfo);
             }
+            if(name.split(":")[1].equals("location")){
+                Log.i("!!","记录位置");
+                startLocaion();
+
+            }
 
 
 
@@ -389,12 +412,116 @@ public class WebFragment extends Fragment {
         Log.i("!!", "停止录音");
     }
 
+    public void startLocaion(){
+
+        AMapLocationClient mLocationClient;
+        AMapLocationClientOption mLocationOption;
+        mLocationClient = new AMapLocationClient(getActivity());
+        mLocationClient.setLocationListener(mLocationListener);
+
+        mLocationOption = new AMapLocationClientOption();
+        //设置定位模式为AMapLocationMode.Hight_Accuracy，高精度模式。
+        mLocationOption.setLocationMode(AMapLocationClientOption.AMapLocationMode.Hight_Accuracy);
+        //设置是否返回地址信息（默认返回地址信息）
+        mLocationOption.setNeedAddress(true);
+        //获取一次定位结果：
+        //该方法默认为false。
+        mLocationOption.setOnceLocation(true);
+        //设置是否允许模拟位置,默认为false，不允许模拟位置
+        mLocationOption.setMockEnable(false);
+
+        //给定位客户端对象设置定位参数
+        mLocationClient.setLocationOption(mLocationOption);
+        //启动定位
+        mLocationClient.startLocation();
+    }
+
+
+    //声明定位回调监听器
+    public AMapLocationListener mLocationListener = new AMapLocationListener() {
+        @Override
+        public void onLocationChanged(AMapLocation amapLocation) {
+            if (amapLocation !=null ) {
+                if (amapLocation.getErrorCode() == 0) {
+
+                    double lat=amapLocation.getLatitude();
+                    double lon=amapLocation.getLongitude();
+                    String pointName=amapLocation.getAddress();
+
+                    //定位成功回调信息，设置相关消息
+                    Log.i(TAG,"当前定位结果来源-----"+amapLocation.getLocationType());//获取当前定位结果来源，如网络定位结果，详见定位类型表
+                    Log.i(TAG,"纬度 ----------------"+amapLocation.getLatitude());//获取纬度
+                    Log.i(TAG,"经度-----------------"+amapLocation.getLongitude());//获取经度
+                    Log.i(TAG,"精度信息-------------"+amapLocation.getAccuracy());//获取精度信息
+                    Log.i(TAG,"地址-----------------"+amapLocation.getAddress());//地址，如果option中设置isNeedAddress为false，则没有此结果，网络定位结果中会有地址信息，GPS定位不返回地址信息。
+                    Log.i(TAG,"国家信息-------------"+amapLocation.getCountry());//国家信息
+                    Log.i(TAG,"省信息---------------"+amapLocation.getProvince());//省信息
+                    Log.i(TAG,"城市信息-------------"+amapLocation.getCity());//城市信息
+                    Log.i(TAG,"城区信息-------------"+amapLocation.getDistrict());//城区信息
+                    Log.i(TAG,"街道信息-------------"+amapLocation.getStreet());//街道信息
+                    Log.i(TAG,"街道门牌号信息-------"+amapLocation.getStreetNum());//街道门牌号信息
+                    Log.i(TAG,"城市编码-------------"+amapLocation.getCityCode());//城市编码
+                    Log.i(TAG,"地区编码-------------"+amapLocation.getAdCode());//地区编码
+                    Log.i(TAG,"当前定位点的信息-----"+amapLocation.getAoiName());//获取当前定位点的AOI信息
+                    String reUrl=getMapUrl(lat,lon);
+                    Log.i(TAG,"当前位置缩略图-------"+getMapUrl(lat,lon));
+
+                    //本地处理
+                    SendInfo sendInfo=new SendInfo();
+                    sendInfo.setUserId(user_id);
+                    sendInfo.setUserName(user_name);
+                    sendInfo.setFriendId(friend_id);
+                    sendInfo.setFriendName(friend_name);
+                    sendInfo.setType("location");
+                    sendInfo.setMsg(lat+"!"+lon+"!"+getMapUrl(lat,lon));//发送位置缩略图的url
+                    //将语音消息加入本地数据库
+                    MessageTranslateTo helper=new MessageTranslateTo(user_name,user_id,friend_id,sendInfo.getMsg(),"location");
+                    //User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),sourceUrl+helper.getMsgFromId()+".jpg",true);
+                    User user = new User(helper.getMsgFromId(),helper.getMsgFrom(),sourceUrl+helper.getMsgFromId()+".jpg",true);
+                    MessageTranslateBack helper1=new MessageTranslateBack(helper.getMsgJson());
+                    Log.i("2发送222222222222222",helper.getMsgJson());
+                    ChatMessage chat_msg =new ChatMessage(null,(String) helper.getMsgJson());
+                    //daoSession.insert(chat_msg);
+                    Log.i("数据库加入++++++",(String) helper.getMsgJson());
+                    EventBus.getDefault().postSticky(sendInfo);
+
+                    //openGaoDeMap("im_chat",pointName,lat,lon);
+
+                } else {
+                    //显示错误信息ErrCode是错误码，errInfo是错误信息，详见错误码表。
+                    Log.e("AmapError", "location Error, ErrCode:"
+                            + amapLocation.getErrorCode() + ", errInfo:"
+                            + amapLocation.getErrorInfo());
+                }
+            }
+        }
+    };
+
+
+
+    private String getMapUrl(double latitude, double longitude) {
+        return "http://restapi.amap.com/v3/staticmap?location=" + longitude + "," + latitude +
+                "&zoom=15&scale=2&size=360*240&markers=mid,,A:" + longitude + ","
+                + latitude + "&key=" + "f663c6263da62967b986cfecbbaa9278";
+    }
+
+
     @Override
     public void onPause() {
         super.onPause();
     }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        //locationManager.removeUpdates(locationListener);
+    }
+
 
 
 }
+
+
+
+
 

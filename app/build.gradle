@@ -12,8 +12,9 @@ android {
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         ndk {
-            abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86'
+            abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86' ,"armeabi","x86_64"
         }
+        multiDexEnabled true
     }
     greendao {
         schemaVersion 1 //数据库版本号
@@ -78,5 +79,12 @@ dependencies {
     implementation 'com.github.CymChad:BaseRecyclerViewAdapterHelper:2.9.46'
     implementation files('libs\\pinyin4j-2.5.0.jar')
     implementation fileTree(dir: 'zego_libs', include: ['*.jar'])
+
+    implementation 'com.amap.api:3dmap:latest.integration'
+    //定位功能
+    implementation 'com.amap.api:location:latest.integration'
+    //搜索功能
+    implementation 'com.amap.api:search:latest.integration'
+
 }
 

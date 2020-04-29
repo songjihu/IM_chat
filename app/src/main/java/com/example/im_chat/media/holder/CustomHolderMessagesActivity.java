@@ -17,6 +17,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
@@ -61,6 +62,7 @@ import org.jivesoftware.smack.chat.ChatManagerListener;
 import org.jivesoftware.smack.chat.ChatMessageListener;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -129,6 +131,11 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
                     //message.setVoice(new Message.Voice("http://192.168.1.109:8080/temp-rainy/test.mp3",210));
                     Log.i("注意","加入图片");
                 }
+                if(helper.getMsgType()!=null&&helper.getMsgType().equals("location")){
+                    message.setImage(new Message.Image(helper.getMsgContent().split("!")[2]));
+                    //message.setVoice(new Message.Voice("http://192.168.1.109:8080/temp-rainy/test.mp3",210));
+                    Log.i("注意","加入位置缩略图");
+                }
                 if(helper.getMsgType()!=null&&helper.getMsgType().equals("voice")){
                     String t_url=helper.getMsgContent().split("!")[1];
                     int t_duration=Integer.parseInt(helper.getMsgContent().split("!")[0]);
@@ -166,6 +173,10 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
             if(data.getType().equals("file")){
                 sendChatMessage(msg,"file");
             }
+            if(data.getType().equals("location")){
+                sendChatMessage(msg,"location");
+            }
+            //sendChatMessage(msg,data.getType());
         }
 
     }
@@ -337,6 +348,16 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
             mediaPlayer.start();
             //File remoteFile = new File(message.getText());
         }
+        //if(message.getImageUrl()!=null&&message.getImageUrl().split(".")[0].equals("http://restapi")){
+        if(message.getText().split("!").length==3){
+            Log.i("!!", "跳转到高德地图");
+            String pointName=null;
+            double lat=Double.valueOf(message.getText().split("!")[0]);
+            double lon=Double.valueOf(message.getText().split("!")[1]);
+            openGaoDeMap("im_chat",pointName,lat,lon);
+
+        }
+
 
 
     }
@@ -425,6 +446,13 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
             Log.i("数据库加入++++++",(String) helper.getMsgJson());
             messagesAdapter.addToStart(message,true);//加入下方列表
         }
+        if(type.equals("location")) {
+            message.setImage(new Message.Image(msgContent.split("!")[2]));
+            ChatMessage chat_msg =new ChatMessage(null,(String) helper.getMsgJson());
+            daoSession.insert(chat_msg);
+            Log.i("数据库加入++++++",(String) helper.getMsgJson());
+            messagesAdapter.addToStart(message,true);//加入下方列表
+        }
         if(type.equals("voice")) {
             String t_url=helper.getMsgContent().split("!")[1];
             int t_duration=Integer.parseInt(helper.getMsgContent().split("!")[0]);
@@ -451,7 +479,7 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
             return;
         }
 
-        if(type.equals("img")) {
+        if(type.equals("img")||type.equals("location")) {
             //用一个线程去更新图片
             List<String> inputList = new ArrayList<String>();
             inputList.add(message.getImageUrl());//url id
@@ -578,6 +606,22 @@ public class CustomHolderMessagesActivity extends DemoMessagesActivity
             }
         }
 
+    }
+
+    private void openGaoDeMap(String appName, @Nullable String poiname, double lat, double lon)
+    {
+        try
+        {
+            //Intent intent = Intent.getIntent("androidamap://viewMap?sourceApplication="+appName+"&poiname=百奎大厦&lat=40.047669&lon=116.313082&dev=0");
+            if(poiname==null){
+                poiname="";
+            }
+            Intent intent = Intent.getIntent("androidamap://viewMap?sourceApplication="+appName+"&poiname="+poiname+"&lat="+lat+"&lon="+lon+"&dev=0");
+            startActivity(intent);
+        } catch (URISyntaxException e)
+        {
+            e.printStackTrace();
+        }
     }
 
 

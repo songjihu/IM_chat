@@ -298,6 +298,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> ,
                     //用Bundle携带数据
                     //新建一个显式意图，第一个参数为当前Activity类对象，第二个参数为你要打开的Activity类
                     Intent intent =new Intent(LoginActivity.this,MainActivity.class);
+                    //Intent intent =new Intent(LoginActivity.this,MapActivity.class);
                     //用Bundle携带数据
                     Bundle bundle=new Bundle();
                     //传递name参数为name到下一层
