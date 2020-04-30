@@ -1,26 +1,41 @@
 package com.example.im_chat.ui.fragment.first;
 
+import android.annotation.TargetApi;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.graphics.BitmapFactory;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.RemoteViews;
+import android.widget.Toast;
 
 
 import com.example.im_chat.R;
 
+import com.example.im_chat.activity.LoginActivity;
+import com.example.im_chat.activity.MainActivity;
 import com.example.im_chat.db.DaoSession;
 import com.example.im_chat.entity.Friend;
 import com.example.im_chat.entity.MyInfo;
 import com.example.im_chat.entity.OldInfo;
 import com.example.im_chat.entity.ZeroInfo;
 import com.example.im_chat.helper.MessageTranslateBack;
+import com.example.im_chat.listener.NotificationClickReceiver;
 import com.example.im_chat.media.data.fixtures.DialogsFixtures;
 import com.example.im_chat.media.data.model.Dialog;
 import com.example.im_chat.media.data.model.Message;
@@ -44,6 +59,9 @@ import java.util.concurrent.CountDownLatch;
 
 import me.yokeyword.eventbusactivityscope.EventBusActivityScope;
 import me.yokeyword.fragmentation.SupportFragment;
+
+import static android.content.Context.NOTIFICATION_SERVICE;
+import static com.zego.zegoavkit2.receiver.BackgroundMonitor.TAG;
 
 
 public  class FirstHomeFragmentChat extends SupportFragment implements DialogsListAdapter.OnDialogClickListener<Dialog>{
@@ -76,6 +94,9 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
     private String latestJson;//最新好友消息
     private List<String> oldJson =new ArrayList<>();
 
+    private NotificationManager manager ;
+
+
 
     //显示好友列表
 
@@ -103,6 +124,7 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
         View view = inflater.inflate(R.layout.activity_custom_holder_dialogs, container, false);
         EventBusActivityScope.getDefault(_mActivity).register(this);
         EventBus.getDefault().register(this);
+        manager = (NotificationManager)getActivity().getSystemService(NOTIFICATION_SERVICE);
         initView(view);
         return view;
     }
@@ -129,17 +151,23 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
             if(helper.getMsgType()!=null&&helper.getMsgType().equals("img")){
                 message.setImage(new Message.Image(helper.getMsgContent()));
                 message.setText("图片");
+                sendChatMsg(getView(),"收到来自"+helper.getMsgFrom()+"的消息","图片",helper.getMsgFromId(),helper.getMsgFrom());
             }
             if(helper.getMsgType()!=null&&helper.getMsgType().equals("location")){
                 message.setImage(new Message.Image(helper.getMsgContent().split("!")[2]));
                 Log.i("注意","加入位置缩略图");
                 message.setText("位置信息");
+                sendChatMsg(getView(),"收到来自"+helper.getMsgFrom()+"的消息","位置消息",helper.getMsgFromId(),helper.getMsgFrom());
             }
             if(helper.getMsgType()!=null&&helper.getMsgType().equals("voice")){
                 String t_url=helper.getMsgContent().split("!")[1];
                 int t_duration=Integer.parseInt(helper.getMsgContent().split("!")[0]);
                 message.setVoice(new Message.Voice(t_url,t_duration));
                 message.setText("语音");
+                sendChatMsg(getView(),"收到来自"+helper.getMsgFrom()+"的消息","语音",helper.getMsgFromId(),helper.getMsgFrom());
+            }
+            if(helper.getMsgType()==null||helper.getMsgType().equals("text")){
+                sendChatMsg(getView(),"收到来自"+helper.getMsgFrom()+"的消息",helper.getMsgContent(),helper.getMsgFromId(),helper.getMsgFrom());
             }
             String FriendId=helper.getMsgFromId();
             String FriendName=helper.getMsgFrom();
@@ -176,9 +204,16 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
 
     @Subscribe(threadMode = ThreadMode.MAIN, sticky = true)
     public void onEvent(ZeroInfo data) {
+        //Log.i("！！","执行清零"+data.getSendId()+"size为"+unreadList.size());
         for(int i=0;i<unreadList.size();i++){
+            //Log.i("!!","检索id"+unreadList.get(i).getId());
             if(data.getSendId().equals(unreadList.get(i).getId())){
-                unreadList.get(i).setUnreadCount(0);
+                //unreadList.get(i).setUnreadCount(0);
+                //Log.i("!!","清清"+unreadList.get(i).getUnreadCount());
+                Dialog dialog=unreadList.get(i);
+                int pos=dialogsAdapter.getDialogPosition(dialog);
+                dialog.setUnreadCount(0);
+                dialogsAdapter.updateItem(pos,dialog);
                 break;
             }
         }
@@ -199,6 +234,18 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
         dialogsAdapter.setOnDialogClickListener(this);
         dialogsList.setAdapter(dialogsAdapter);
         Log.i("开启第一个Fragment","ohohohohohohohoh");
+        //初始化通知栏通道
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            String channelId = "chat";
+            String channelName = "聊天消息";
+            int importance = NotificationManager.IMPORTANCE_HIGH;
+            createNotificationChannel(channelId, channelName, importance);
+
+            channelId = "subscribe";
+            channelName = "订阅消息";
+            importance = NotificationManager.IMPORTANCE_DEFAULT;
+            createNotificationChannel(channelId, channelName, importance);
+        }
         loadOldMessages();
     }
 
@@ -232,17 +279,23 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
             if(helper.getMsgType()!=null&&helper.getMsgType().equals("img")){
                 message.setImage(new Message.Image(helper.getMsgContent()));
                 message.setText("图片");
+                sendChatMsg(getView(),"收到来自"+helper.getMsgFrom()+"的消息","图片",helper.getMsgFromId(),helper.getMsgFrom());
             }
             if(helper.getMsgType()!=null&&helper.getMsgType().equals("location")){
                 message.setImage(new Message.Image(helper.getMsgContent().split("!")[2]));
                 Log.i("注意","加入位置缩略图");
                 message.setText("位置信息");
+                sendChatMsg(getView(),"收到来自"+helper.getMsgFrom()+"的消息","位置消息",helper.getMsgFromId(),helper.getMsgFrom());
             }
             if(helper.getMsgType()!=null&&helper.getMsgType().equals("voice")){
                 String t_url=helper.getMsgContent().split("!")[1];
                 int t_duration=Integer.parseInt(helper.getMsgContent().split("!")[0]);
                 message.setVoice(new Message.Voice(t_url,t_duration));
                 message.setText("语音");
+                sendChatMsg(getView(),"收到来自"+helper.getMsgFrom()+"的消息","语音",helper.getMsgFromId(),helper.getMsgFrom());
+            }
+            if(helper.getMsgType()==null||helper.getMsgType().equals("text")){
+                sendChatMsg(getView(),"收到来自"+helper.getMsgFrom()+"的消息",helper.getMsgContent(),helper.getMsgFromId(),helper.getMsgFrom());
             }
             String FriendId=helper.getMsgFromId();
             String FriendName=helper.getMsgFrom();
@@ -287,17 +340,76 @@ public  class FirstHomeFragmentChat extends SupportFragment implements DialogsLi
 
     }
 
+
+    public void sendChatMsg(View view,String title,String text,String id,String name) {
+        //配置点击事件监听
+        Intent intent =new Intent (getActivity(), NotificationClickReceiver.class);
+        //用Bundle携带数据
+
+        Bundle bundle=new Bundle();
+        bundle.putString("jid",uTitles);
+        bundle.putString("name",uTitles_name);
+        bundle.putString("f_jid",id);
+        bundle.putString("f_name",name);
+        //Log.i("4523543254获取到的name值为",uuu.getUserName());
+        intent.putExtras(bundle);
+        PendingIntent pendingIntent =PendingIntent.getBroadcast(getActivity(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        //创建监听
+        Notification notification = new NotificationCompat.Builder(getActivity(), "chat")
+                .setContentTitle(title)
+                .setContentText(text)
+                .setWhen(System.currentTimeMillis())
+                .setSmallIcon(R.drawable.ic_chat)
+                .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.ic_chat))
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .build();
+        manager.notify(1, notification);
+
+    }
+
+    public void sendSubscribeMsg(View view,String title,String text) {
+        Notification notification = new NotificationCompat.Builder(getActivity(), "subscribe")
+                .setContentTitle(title)
+                .setContentText(text)
+                .setWhen(System.currentTimeMillis())
+                .setSmallIcon(R.drawable.ic_chat)
+                .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.ic_chat))
+                .setAutoCancel(true)
+                .build();
+        manager.notify(2, notification);
+
+    }
+
+    @TargetApi(Build.VERSION_CODES.O)
+    private void createNotificationChannel(String channelId, String channelName, int importance) {
+        NotificationChannel channel = new NotificationChannel(channelId, channelName, importance);
+        channel.setShowBadge(true);//允许角标通知
+        NotificationManager notificationManager = (NotificationManager) getActivity().getSystemService(
+                NOTIFICATION_SERVICE);
+        notificationManager.createNotificationChannel(channel);
+    }
+
+
+
+
+
+
     @Override
     public void onDestroyView() {
         super.onDestroyView();
         EventBusActivityScope.getDefault(_mActivity).unregister(this);
         EventBus.getDefault().unregister(this);
+        //getActivity().unregisterReceiver(nlBroadcastReceiver );
+
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
         EventBus.getDefault().unregister(this);
+        //getActivity().unregisterReceiver(nlBroadcastReceiver );
+
     }
 
 

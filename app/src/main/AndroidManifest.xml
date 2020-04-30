@@ -80,6 +80,13 @@
             android:name="com.amap.api.v2.apikey"
             android:value="c979f43f9afd2596df7b7efcfa414041"/>
         <service android:name="com.amap.api.location.APSService"></service>
+        <receiver
+            android:name=".listener.NotificationClickReceiver">
+            <intent-filter>
+                <action android:name="com.example.im_chat.ui.fragment.first" >
+                </action>
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>
